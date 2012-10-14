@@ -12,6 +12,7 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
     Estimates the consistent BPM for an audio sample based on
     the peaks in amplitude and the best fit bpm between the range
     (low_bpm, high_bpm).
+    NOTE: Not useful for audio where the tempo changes.
     """
     #First pass through and zero out all but the
     #5% of samples with the largest amplitudes
