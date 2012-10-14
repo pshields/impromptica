@@ -45,4 +45,25 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
             best_bpm = bpm
             most_hits = hits
 
+    #Check to make sure half or double the tempo isn't correct
+    best_ratio = 0.0
+
+    sample_rate_step = frame_rate * 60.0 / best_bpm
+    samples = [sample_rate_step, sample_rate_step / 2, sample_rate_step * 2]
+
+    for sample_step in samples:
+        hits = 0.0
+        steps = 0.0
+        cur_sample = sample_step
+        while cur_sample < len(filtered_samples):
+            if filtered_samples[cur_sample] != 0:
+                hits += 1
+            steps += 1
+            cur_sample += sample_step
+
+        if hits/steps > best_ratio:
+            best_ratio = hits/steps
+            best_bpm = (frame_rate * 60) / sample_step 
+
     return best_bpm
+
