@@ -9,6 +9,9 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('input_file', help='an input audio file')
+parser.add_argument('input_file', help=(
+    'Input audio file. The format of the audio file must be one accepted by '
+    'libsndfile. For a list of compatible formats, see '
+    'http://www.mega-nerd.com/libsndfile/.'))
 
 args = parser.parse_args()
