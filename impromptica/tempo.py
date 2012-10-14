@@ -28,24 +28,20 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
             filtered_samples[pos] = 0
 
     best_bpm = 0
-    best_ratio = 0
+    most_hits = 0
 
     #Try to map every bpm in the range, and see which one best fits
     for bpm in range(low_bpm, high_bpm + 1):
         sample_rate_step = frame_rate * 60.0 / bpm
         cur_sample = sample_rate_step
         hits = 0.0
-        steps = 0.0
         while cur_sample < len(filtered_samples):
-            steps += 1
             if filtered_samples[cur_sample] != 0:
                hits += 1 
             cur_sample += sample_rate_step
 
-        hit_ratio = hits/steps
-
-        if(hit_ratio > best_ratio):
+        if(hits > most_hits):
             best_bpm = bpm
-            best_ratio = hit_ratio
+            most_hits = hits
 
     return best_bpm
