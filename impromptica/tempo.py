@@ -37,7 +37,7 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
         hits = 0.0
         while cur_sample < len(filtered_samples):
             if filtered_samples[cur_sample] != 0:
-               hits += 1 
+                hits += 1
             cur_sample += sample_rate_step
 
         if(hits > most_hits):
