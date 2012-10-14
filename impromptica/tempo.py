@@ -19,7 +19,7 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
     top_samples.sort()
     top_samples = top_samples[-len(top_samples) * 0.10:]
 
-    cut = min(top_samples)
+    cut = top_samples[0]
 
     filtered_samples = copy(samples)
 
