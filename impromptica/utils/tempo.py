@@ -5,7 +5,7 @@ Works with audio formatted in 1-D numpy arrays.
 """
 
 from numpy import copy
-
+from scipy import mean
 
 def map_pass(samples, frame_rate, low_bpm, high_bpm):
     """
@@ -14,24 +14,29 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
     (low_bpm, high_bpm).
     NOTE: Not useful for audio where the tempo changes.
     """
+    filtered_samples = copy(samples)
+    #Square values to accentuate amplitudes
+    filtered_samples = filtered_samples ** 2
+
     #First pass through and zero out all but the
     #5% of samples with the largest amplitudes
-    top_samples = copy(samples)
+    top_samples = copy(filtered_samples)
     top_samples.sort()
-    top_samples = top_samples[-len(top_samples) * 0.10:]
+    top_samples = top_samples[-len(top_samples) * 0.15:]
 
     cut = top_samples[0]
-
-    filtered_samples = copy(samples)
 
     for pos, sample in enumerate(filtered_samples):
         if abs(sample) < cut:
             filtered_samples[pos] = 0
 
+    return map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate)
+
+def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
+    #Try to map every bpm in the range, and see which one best fits
     best_bpm = 0
     most_hits = 0
 
-    #Try to map every bpm in the range, and see which one best fits
     for bpm in range(low_bpm, high_bpm + 1):
         sample_rate_step = frame_rate * 60.0 / bpm
         cur_sample = sample_rate_step
@@ -49,9 +54,9 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
     best_ratio = 0.0
 
     sample_rate_step = frame_rate * 60.0 / best_bpm
-    samples = [sample_rate_step, sample_rate_step / 2, sample_rate_step * 2]
+    sample_steps = [sample_rate_step, sample_rate_step / 2, sample_rate_step * 2]
 
-    for sample_step in samples:
+    for sample_step in sample_steps:
         hits = 0.0
         steps = 0.0
         cur_sample = sample_step
@@ -66,4 +71,3 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
             best_bpm = (frame_rate * 60) / sample_step 
 
     return best_bpm
-
