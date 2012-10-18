@@ -16,13 +16,12 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
     """
     filtered_samples = copy(samples)
     #Square values to accentuate amplitudes
-    filtered_samples = filtered_samples ** 2
 
     #First pass through and zero out all but the
     #5% of samples with the largest amplitudes
     top_samples = copy(filtered_samples)
     top_samples.sort()
-    top_samples = top_samples[-len(top_samples) * 0.15:]
+    top_samples = top_samples[-len(top_samples) * 0.10:]
 
     cut = top_samples[0]
 
