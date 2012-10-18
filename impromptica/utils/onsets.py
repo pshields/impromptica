@@ -41,6 +41,9 @@ def get_onsets(filename):
 def plot_onsets(filename):
     onsets, filtered_samples, onset_det, odf = get_onsets(filename)
 
+    #Scale to -1 to 1 to graph with onsets
+    filtered_samples /= numpy.max(filtered_samples)
+
     fig = plt.figure(1, figsize=(12, 12))
     plt.subplot(3, 1, 1)
     plt.title("Onset detection with ComplexODF")
@@ -53,4 +56,5 @@ def plot_onsets(filename):
 
     trplot.plot_onsets(onsets, 1.0)
     plt.plot(filtered_samples, "0.4")
+
     plt.show()
