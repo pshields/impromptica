@@ -5,9 +5,6 @@ import modal.onsetdetection as onsetdetection
 import modal.ui.plot as trplot
 from scipy.io import wavfile
 
-frame_size = 2048
-hop_size = 512
-
 def get_onsets(filename):
     """
     Using Complex Domain Onset Detection from modal
@@ -19,6 +16,10 @@ def get_onsets(filename):
     frame_rate, samples = wavfile.read(filename)
     samples = numpy.asarray(samples, dtype=numpy.double)
     samples = samples.sum(axis=1)
+   
+    #Use 20 frames, and a hop size 1/4 of a frame
+    frame_size = frame_rate / 20
+    hop_size = frame_size / 4
 
     #Scale to -1 to 1 for easier processing
     max_ampl = numpy.max(samples)
@@ -36,10 +37,11 @@ def get_onsets(filename):
     onsets = onset_det.find_onsets(odf_values) * odf.get_hop_size()
 
     filtered_samples = samples * max_ampl
-    return onsets, filtered_samples, onset_det, odf
+    return onsets, filtered_samples, (onset_det, odf, frame_size, hop_size)
 
 def plot_onsets(filename):
-    onsets, filtered_samples, onset_det, odf = get_onsets(filename)
+    onsets, filtered_samples, extras = get_onsets(filename)
+    onset_det, odf, frame_size, hop_size = extras
 
     #Scale to -1 to 1 to graph with onsets
     filtered_samples /= numpy.max(filtered_samples)
