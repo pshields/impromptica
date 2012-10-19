@@ -5,7 +5,7 @@ Works with audio formatted in 1-D numpy arrays.
 """
 
 from numpy import copy
-from scipy import mean
+
 
 def map_pass(samples, frame_rate, low_bpm, high_bpm):
     """
@@ -31,6 +31,7 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
 
     return map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate)
 
+
 def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
     #Try to map every bpm in the range, and see which one best fits
     best_bpm = 0
@@ -53,7 +54,8 @@ def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
     best_ratio = 0.0
 
     sample_rate_step = frame_rate * 60.0 / best_bpm
-    sample_steps = [sample_rate_step, sample_rate_step / 2, sample_rate_step * 2]
+    sample_steps = [sample_rate_step, sample_rate_step / 2,
+                    sample_rate_step * 2]
 
     for sample_step in sample_steps:
         hits = 0.0
@@ -65,8 +67,8 @@ def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
             steps += 1
             cur_sample += sample_step
 
-        if hits/steps > best_ratio:
-            best_ratio = hits/steps
-            best_bpm = (frame_rate * 60) / sample_step 
+        if hits / steps > best_ratio:
+            best_ratio = hits / steps
+            best_bpm = (frame_rate * 60) / sample_step
 
     return best_bpm
