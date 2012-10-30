@@ -26,7 +26,11 @@ def get_onsets(filename):
     max_ampl = numpy.max(samples)
     samples /= max_ampl
 
+    #This can be substituted with several other
+    #onset detection algorithms packaged with modal.
+    #This one works pretty well.
     odf = modal.ComplexODF()
+
     odf.set_hop_size(hop_size)
     odf.set_frame_size(frame_size)
     odf.set_sampling_rate(frame_rate)
