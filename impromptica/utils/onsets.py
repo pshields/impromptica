@@ -18,9 +18,9 @@ def get_onsets(filename):
     samples = numpy.asarray(samples, dtype=numpy.double)
     samples = samples.sum(axis=1)
 
-    #Use 20 frames, and a hop size 1/4 of a framie
+    #Use 20 frames per second, and a 50% overlap
     frame_size = frame_rate / 20
-    hop_size = frame_size / 4
+    hop_size = frame_size / 2
 
     #Scale to -1 to 1 for easier processing
     max_ampl = numpy.max(samples)
