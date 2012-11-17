@@ -6,10 +6,10 @@ http://kern.ccarh.org/cgi-bin/ksbrowse?l=/essen and the list of songs used to
 train the monophonic key and meter programs is published at
 http://theory.esm.rochester.edu/temperley/music-prob/data/essen-train-list.
 """
+from impromptica import utils
 
 # This monophonic key profile generated from the Essen corpus provides
-# probabilities of a given note given its relative offset from the tonic note
-# of the key when the key is a major key.
+# probabilities of the offset of a note from the tonic note of a major key.
 # Source: David Temperley. Music and Probability (Figure 4.7).
 MAJOR_KEY_PROFILE = [
     0.184,
@@ -27,8 +27,7 @@ MAJOR_KEY_PROFILE = [
 ]
 
 # This monophonic key profile generated from the Essen corpus provides
-# probabilities of a given note given its relative offset from the tonic note
-# of the key when the key is a minor key.
+# probabilities of the offset of a note from the tonic note of a minor key.
 # Source: David Temperley. Music and Probability (Figure 4.7).
 MINOR_KEY_PROFILE = [
     0.192,
@@ -44,3 +43,8 @@ MINOR_KEY_PROFILE = [
     0.053,
     0.022,
 ]
+
+# This proximity profile generated from the Essen corpus provides
+# probabilities of the distance of a note from the previous note.
+# Source: David Temperley. Music and Probability (Table 4.1).
+PROXIMITY_PROFILE = utils.build_proximity_profile(7.2)
