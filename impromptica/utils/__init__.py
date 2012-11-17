@@ -1,1 +1,1 @@
-from probabilities import build_proximity_profile
+from probabilities import build_distance_profile

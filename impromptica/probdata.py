@@ -47,4 +47,10 @@ MINOR_KEY_PROFILE = [
 # This proximity profile generated from the Essen corpus provides
 # probabilities of the distance of a note from the previous note.
 # Source: David Temperley. Music and Probability (Table 4.1).
-PROXIMITY_PROFILE = utils.build_proximity_profile(7.2)
+PROXIMITY_PROFILE = utils.build_distance_profile(7.2)
+
+# This range profile generated from the Essen corpus provides probabilities
+# of the distance of a note from the central pitch. The central pitch is
+# essentially the mean note value of over a song.
+# Source: David Temperley. Music and Probability (Table 4.1).
+RANGE_PROFILE = utils.build_distance_profile(29.0)
