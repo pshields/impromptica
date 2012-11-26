@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import modal
 import modal.onsetdetection as onsetdetection
 import modal.ui.plot as trplot
-from scipy.io import wavfile
+#from scipy.io import wavfile
+from scikits.audiolab import Sndfile
 
 
 def get_onsets(filename):
@@ -14,7 +15,11 @@ def get_onsets(filename):
     Returns note onset positions, the audio waveform after a low-pass filter,
     and modal classes necessary for plotting.
     """
-    frame_rate, samples = wavfile.read(filename)
+    #frame_rate, samples = wavfile.read(filename)
+    f = Sndfile(filename, 'r')
+    frame_rate = f.samplerate
+    samples = f.read_frames(f.nframes)
+
     samples = numpy.asarray(samples, dtype=numpy.double)
     samples = samples.sum(axis=1)
 
