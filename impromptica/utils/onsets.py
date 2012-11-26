@@ -21,7 +21,9 @@ def get_onsets(filename):
     samples = f.read_frames(f.nframes)
 
     samples = numpy.asarray(samples, dtype=numpy.double)
-    samples = samples.sum(axis=1)
+
+    if samples.ndim > 1:
+        samples = samples.sum(axis=1)
 
     #Use 20 frames per second, and a 50% overlap
     frame_size = frame_rate / 20

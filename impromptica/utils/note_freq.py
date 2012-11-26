@@ -5,7 +5,7 @@ reports the note frequency (or frequencies) for each onset
 
 from scipy import fft
 from pylab import arange, plot, show, subplot, title
-
+import numpy
 
 def frequencies(onsets, samples, Fs=44100):
     """
@@ -15,8 +15,11 @@ def frequencies(onsets, samples, Fs=44100):
     """
     #Arbitrary window size -
     # change to something in terms of the sampling frequency?
-    #Seems to work for now
-    NFFT = 1024
+    #Seems to work for now (roughly 1/8 a sec sample at 44100hz)
+    NFFT = 1024 * 5
+
+    #For smoothing the window, and better results
+    hamming_window = numpy.hamming(NFFT)
 
     #FFT returns frequency buckets.
     #The first index is 0Hz, and each subsequent one is i * Fs/NFFT Hz
@@ -25,8 +28,8 @@ def frequencies(onsets, samples, Fs=44100):
     notes = {}
 
     for notenum, onset in enumerate(onsets):
-        #Get the fft
-        transform = fft(samples[onset: onset + NFFT]) / NFFT
+        #Get the fft, use a hamming window
+        transform = fft(hamming_window * samples[onset: onset + NFFT]) / NFFT
 
         #Get the magnitude of each FFT coefficient,
         #since it returns complex values
@@ -49,7 +52,7 @@ def frequencies(onsets, samples, Fs=44100):
         note.append(prom_note)
 
         #Arbitrary threshold. Probably should make this less hardcoded
-        threshold = .40 * max_coeff
+        threshold = .80 * max_coeff
 
         for i, val in enumerate(fft_coeffs):
             if val > threshold and val != max_coeff:
@@ -75,6 +78,9 @@ def plotNoteFrequencies(onset, samples, Fs, NFFT, graph_title=""):
     #Can only use half the fft values. See above comment
     x = x[:len(x) / 2]
     t = arange(0.0, Fs / 2 - freq_dist, freq_dist)
+
+    #Crop t to x in case it's the last note, and it's short
+    t = t[:len(x)]
 
     title(graph_title)
     subplot(111)
