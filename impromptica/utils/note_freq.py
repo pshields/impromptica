@@ -12,24 +12,24 @@ def frequencies(onsets, samples, Fs=44100):
     Returns a dict containing lists of frequencies (in hz) corresponding to each onset
     Assumes samples is collapsed (mono)
     """
-    #Arbitrary - change to something in terms of the sampling frequency?
+    #Arbitrary window size - change to something in terms of the sampling frequency?
     #Seems to work for now
-    window_size = 1024
+    NFFT = 1024
 
-    #FFT returns frequency buckets. The first index is 0Hz, and each subsequent one is i * Fs/window_size Hz
-    freq_dist = Fs/window_size
+    #FFT returns frequency buckets. The first index is 0Hz, and each subsequent one is i * Fs/NFFT Hz
+    freq_dist = Fs/NFFT
 
     notes = {}
 
     for notenum, onset in enumerate(onsets):
         #Get the fft
-        transform = fft(samples[onset: onset + window_size])/window_size
+        transform = fft(samples[onset: onset + NFFT])/NFFT
 
         #Get the magnitude of each FFT coefficient, since it returns complex values
         fft_coeffs = [x.real**2 + x.imag**2 for x in transform]
 
         #We can only use the first half of the coeffs (See nyquist frequency). The other half are duplicates
-        fft_coeffs = fft_coeffs[:window_size/2]
+        fft_coeffs = fft_coeffs[:NFFT/2]
 
         #Slight misnomer. Contains a list of frequencies associated with this note onset
         note = []
@@ -52,7 +52,7 @@ def frequencies(onsets, samples, Fs=44100):
     #spam all the notes! (testing)
     #for notenum, onset in enumerate(onsets):
     #     graph_title = "Note %d" % notenum
-    #     plotNoteFrequencies(onset, samples, 44100, window_size, graph_title)
+    #     plotNoteFrequencies(onset, samples, 44100, NFFT, graph_title)
 
     for notenum, note in enumerate(sorted(notes)):
         print "Onset %d notes (Hz): " % notenum, notes[note]
@@ -72,4 +72,3 @@ def plotNoteFrequencies(onset, samples, Fs, NFFT, graph_title=""):
     plot(t, abs(x))
     
     show()
-
