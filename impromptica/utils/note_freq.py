@@ -6,6 +6,8 @@ reports the note frequency (or frequencies) for each onset
 from scipy import fft
 from pylab import arange, plot, show, subplot, title
 import numpy
+import math
+
 
 def frequencies(onsets, samples, Fs=44100):
     """
@@ -15,8 +17,8 @@ def frequencies(onsets, samples, Fs=44100):
     """
     #Arbitrary window size -
     # change to something in terms of the sampling frequency?
-    #Seems to work for now (roughly 1/8 a sec sample at 44100hz)
-    NFFT = 1024 * 5
+    #Seems to work for now (roughly 20hz size bins)
+    NFFT = 1024
 
     #For smoothing the window, and better results
     hamming_window = numpy.hamming(NFFT)
@@ -29,7 +31,8 @@ def frequencies(onsets, samples, Fs=44100):
 
     for notenum, onset in enumerate(onsets):
         #Get the fft, use a hamming window
-        transform = fft(hamming_window * samples[onset: onset + NFFT]) / NFFT
+        transform = fft(hamming_window *
+                        samples[onset: onset + NFFT], NFFT) / NFFT
 
         #Get the magnitude of each FFT coefficient,
         #since it returns complex values
@@ -47,7 +50,12 @@ def frequencies(onsets, samples, Fs=44100):
         #(find max, accept within a threshold?)
         max_coeff = max(fft_coeffs)
         prom_note = fft_coeffs.index(max_coeff) * freq_dist
+        last_note = prom_note
         print "Prominent note freq for note %d is %d" % (notenum, prom_note)
+
+        #Find the nearest note on the equal-tempered scale
+        #that matches this frequency, round the note to it
+        prom_note = equalTemperamentNote(prom_note)
 
         note.append(prom_note)
 
@@ -56,7 +64,20 @@ def frequencies(onsets, samples, Fs=44100):
 
         for i, val in enumerate(fft_coeffs):
             if val > threshold and val != max_coeff:
-                note.append(i * freq_dist)
+                this_note = equalTemperamentNote(i * freq_dist)
+
+                #Eliminate erroneous notes
+                if last_note:
+                    if abs(frequencyToNote(this_note) -
+                           frequencyToNote(last_note)) <= 2:
+                        #Take the average frequency,
+                        #replace the last frequency with it
+                        average_freq = (this_note + last_note) / 2
+                        this_note = equalTemperamentNote(average_freq)
+                        note.pop()
+
+                last_note = this_note
+                note.append(this_note)
 
         notes[onset] = note
 
@@ -64,6 +85,18 @@ def frequencies(onsets, samples, Fs=44100):
         print "Onset %d notes (Hz): " % notenum, notes[note]
 
     return notes
+
+
+def frequencyToNote(freq):
+    return round(12 * math.log(freq / 440.0) / math.log(2))
+
+
+def noteToFrequency(n):
+    return 440 * 2 ** (n / 12.0)
+
+
+def equalTemperamentNote(freq):
+    return noteToFrequency(frequencyToNote(freq))
 
 
 def plotNoteFrequencies(onset, samples, Fs, NFFT, graph_title=""):
