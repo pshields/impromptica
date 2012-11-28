@@ -13,10 +13,19 @@ def frequencies(onsets, samples, Fs=44100):
     """
     Returns a dict containing lists of frequencies (in hz) corresponding
     to each onset.
+
+    Onsets is a list of indices which point to onsets in samples,
+    which is a list of amplitudes, where every Fs elements
+    equations to 1 second of sound.
+
     Assumes samples is collapsed (mono)
     """
     #Arbitrary window size -
-    # change to something in terms of the sampling frequency?
+    #This is the number of samples we look at after each onset, and
+    #also the number of samples in our window (We just use one).
+    #The alternative would be to define this as the number of samples we
+    #look at, but then analyze it using multiple windows
+    #(Short time fourier transform))
     #Seems to work for now (roughly 20hz size bins)
     NFFT = 1024
 
@@ -88,6 +97,8 @@ def frequencies(onsets, samples, Fs=44100):
 
 
 def frequencyToNote(freq):
+    if freq < 1:
+        freq = 1
     return round(12 * math.log(freq / 440.0) / math.log(2))
 
 
