@@ -1,8 +1,4 @@
-"""
-Given note onset positions and a numpy array of samples (amplitudes),
-reports the note frequency (or frequencies) for each onset
-"""
-
+"""Utilities for working with notes and frequencies."""
 from scipy import fft
 from pylab import arange, plot, show, subplot, title
 import numpy
@@ -10,9 +6,11 @@ import math
 
 
 def frequencies(onsets, samples, Fs=44100):
-    """
-    Returns a dict containing lists of frequencies (in hz) corresponding
-    to each onset.
+    """Returns a dict of lists of frequencies of onsets.
+
+    Given note onset positions and a numpy array of samples (amplitudes), this
+    function returns a dict containing lists of frequencies (in hz)
+    corresponding to each onset.
 
     Onsets is a list of indices which point to onsets in samples,
     which is a list of amplitudes, where every Fs elements
@@ -103,7 +101,12 @@ def frequency_to_note(freq):
 
 
 def note_to_frequency(n):
-    return 440 * 2 ** (n / 12.0)
+    """Returns the frequency of the given note value.
+    
+    Our mapping of note values to frequencies matches the common convention
+    that the note C4 (middle C) is represented by the note value 60.
+    """
+    return 261.63 * 2 ** (n / 12.0)
 
 
 def equal_temperament_note(freq):
