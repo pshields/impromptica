@@ -27,21 +27,21 @@ def frequencies(onsets, samples, Fs=44100):
     #look at, but then analyze it using multiple windows
     #(Short time fourier transform))
     #Seems to work for now (roughly 20hz size bins)
-    NFFT = 1024
+    window = 1024
 
     #For smoothing the window, and better results
-    hamming_window = numpy.hamming(NFFT)
+    hamming_window = numpy.hamming(window)
 
     #FFT returns frequency buckets.
-    #The first index is 0Hz, and each subsequent one is i * Fs/NFFT Hz
-    freq_dist = Fs / NFFT
+    #The first index is 0Hz, and each subsequent one is i * Fs/window Hz
+    freq_dist = Fs / window
 
     notes = {}
 
     for notenum, onset in enumerate(onsets):
         #Get the fft, use a hamming window
         transform = fft(hamming_window *
-                        samples[onset: onset + NFFT], NFFT) / NFFT
+                        samples[onset: onset + window], window) / window
 
         #Get the magnitude of each FFT coefficient,
         #since it returns complex values
@@ -49,7 +49,7 @@ def frequencies(onsets, samples, Fs=44100):
 
         #We can only use the first half of the coeffs (See nyquist frequency).
         #The other half are duplicates
-        fft_coeffs = fft_coeffs[:NFFT / 2]
+        fft_coeffs = fft_coeffs[:window / 2]
 
         #Slight misnomer.
         #Contains a list of frequencies associated with this note onset
@@ -64,7 +64,7 @@ def frequencies(onsets, samples, Fs=44100):
 
         #Find the nearest note on the equal-tempered scale
         #that matches this frequency, round the note to it
-        prom_note = equalTemperamentNote(prom_note)
+        prom_note = equal_temperament_note(prom_note)
 
         note.append(prom_note)
 
@@ -73,16 +73,16 @@ def frequencies(onsets, samples, Fs=44100):
 
         for i, val in enumerate(fft_coeffs):
             if val > threshold and val != max_coeff:
-                this_note = equalTemperamentNote(i * freq_dist)
+                this_note = equal_temperament_note(i * freq_dist)
 
                 #Eliminate erroneous notes
                 if last_note:
-                    if abs(frequencyToNote(this_note) -
-                           frequencyToNote(last_note)) <= 2:
+                    if abs(frequency_to_note(this_note) -
+                           frequency_to_note(last_note)) <= 2:
                         #Take the average frequency,
                         #replace the last frequency with it
                         average_freq = (this_note + last_note) / 2
-                        this_note = equalTemperamentNote(average_freq)
+                        this_note = equal_temperament_note(average_freq)
                         note.pop()
 
                 last_note = this_note
@@ -96,28 +96,28 @@ def frequencies(onsets, samples, Fs=44100):
     return notes
 
 
-def frequencyToNote(freq):
+def frequency_to_note(freq):
     if freq < 1:
         freq = 1
     return round(12 * math.log(freq / 440.0) / math.log(2))
 
 
-def noteToFrequency(n):
+def note_to_frequency(n):
     return 440 * 2 ** (n / 12.0)
 
 
-def equalTemperamentNote(freq):
-    return noteToFrequency(frequencyToNote(freq))
+def equal_temperament_note(freq):
+    return note_to_frequency(frequency_to_note(freq))
 
 
-def plotNoteFrequencies(onset, samples, Fs, NFFT, graph_title=""):
+def plot_note_frequencies(onset, samples, Fs, window, graph_title=""):
     """
     Visualize the frequency spectogram. Used for testing.
     """
-    freq_dist = Fs / NFFT
+    freq_dist = Fs / window
 
-    note_samples = samples[onset: onset + NFFT]
-    x = fft(note_samples) / NFFT
+    note_samples = samples[onset: onset + window]
+    x = fft(note_samples) / window
 
     #Can only use half the fft values. See above comment
     x = x[:len(x) / 2]
