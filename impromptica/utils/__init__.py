@@ -1,1 +1,3 @@
+from generation import generate_note
 from probabilities import build_distance_profile
+from probabilities import build_key_profile
