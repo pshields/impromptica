@@ -6,12 +6,32 @@ http://kern.ccarh.org/cgi-bin/ksbrowse?l=/essen and the list of songs used to
 train the monophonic key and meter programs is published at
 http://theory.esm.rochester.edu/temperley/music-prob/data/essen-train-list.
 """
-from impromptica import utils
+from scipy import stats
+
+from impromptica import settings
+
+
+def build_distance_profile_data(standard_deviation):
+    """Builds distance profile data using the given standard deviation (as a
+    distance between note values.)
+
+    The profile data is built from a Gaussian distribution, which is an
+    approximation for the actual data.
+
+    The result is a table, where the probability of note value j given
+    reference note value i is located at the index equal to the absolute
+    value of j - i.
+    """
+    result = []
+    dist = stats.norm(0, standard_deviation)
+    for i in range(settings.MAX_NOTE + 1):
+        result.append(dist.pdf(i))
+    return result
 
 # This monophonic key profile generated from the Essen corpus provides
 # probabilities of the offset of a note from the tonic note of a major key.
 # Source: David Temperley. Music and Probability (Figure 4.7).
-MAJOR_KEY_PROFILE = [
+MAJOR_KEY_PROFILE_DATA = [
     0.184,
     0.001,
     0.155,
@@ -29,7 +49,7 @@ MAJOR_KEY_PROFILE = [
 # This monophonic key profile generated from the Essen corpus provides
 # probabilities of the offset of a note from the tonic note of a minor key.
 # Source: David Temperley. Music and Probability (Figure 4.7).
-MINOR_KEY_PROFILE = [
+MINOR_KEY_PROFILE_DATA = [
     0.192,
     0.005,
     0.149,
@@ -47,10 +67,10 @@ MINOR_KEY_PROFILE = [
 # This proximity profile generated from the Essen corpus provides
 # probabilities of the distance of a note from the previous note.
 # Source: David Temperley. Music and Probability (Table 4.1).
-PROXIMITY_PROFILE = utils.build_distance_profile(7.2)
+PROXIMITY_PROFILE_DATA = build_distance_profile_data(7.2)
 
 # This range profile generated from the Essen corpus provides probabilities
 # of the distance of a note from the central pitch. The central pitch is
 # essentially the mean note value of over a song.
 # Source: David Temperley. Music and Probability (Table 4.1).
-RANGE_PROFILE = utils.build_distance_profile(29.0)
+RANGE_PROFILE_DATA = build_distance_profile_data(29.0)

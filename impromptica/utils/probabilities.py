@@ -1,20 +1,23 @@
 """Impromptica utilities related to probability."""
-from scipy import stats
 
 
-def build_distance_profile(standard_deviation):
-    """Builds a distance profile using the given standard deviation (as a
-    distance between note values.)
+def build_distance_profile(distance_profile_data, base_note):
+    """Builds an accessor to distance profile data.
 
-    The profile is built from a Gaussian distribution, which is an
-    approximation for the actual data.
-
-    The result is a table, where the probability of note value j given
-    reference note value i is located at the index equal to the absolute
-    value of j - i.
+    Returns a function which takes a note value and returns the value of the
+    distance profile data at the distance between that note and the base note.
     """
-    result = []
-    dist = stats.norm(0, standard_deviation)
-    for i in range(120):
-        result.append(dist.pdf(i))
-    return result
+
+    def accessor(note):
+        return distance_profile_data[abs(note - base_note)]
+
+    return accessor
+
+
+def build_key_profile(key_profile_data, key):
+    """Builds an accessor to key profile data."""
+
+    def accessor(note):
+        return key_profile_data[(note - key[0]) % 12]
+
+    return accessor
