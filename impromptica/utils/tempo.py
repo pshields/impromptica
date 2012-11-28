@@ -15,10 +15,10 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
     NOTE: Not useful for audio where the tempo changes.
     """
     filtered_samples = copy(samples)
-    #Square values to accentuate amplitudes
+    # Square values to accentuate amplitudes
 
-    #First pass through and zero out all but the
-    #5% of samples with the largest amplitudes
+    # First pass through and zero out all but the
+    # 5% of samples with the largest amplitudes
     top_samples = copy(filtered_samples)
     top_samples.sort()
     top_samples = top_samples[-len(top_samples) * 0.10:]
@@ -33,7 +33,7 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
 
 
 def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
-    #Try to map every bpm in the range, and see which one best fits
+    # Try to map every bpm in the range, and see which one best fits
     best_bpm = 0
     most_hits = 0
 
@@ -50,7 +50,7 @@ def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
             best_bpm = bpm
             most_hits = hits
 
-    #Check to make sure half or double the tempo isn't correct
+    # Check to make sure half or double the tempo isn't correct
     best_ratio = 0.0
 
     sample_rate_step = frame_rate * 60.0 / best_bpm
