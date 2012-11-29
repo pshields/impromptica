@@ -26,7 +26,7 @@ NOTES = {
 }
 
 
-def note_to_semitone(note, octave=_CONCERT_OCTAVE):
+def notestring_to_note(note, octave=_CONCERT_OCTAVE):
     """
     Converts a note string into a semitone.
     Notes can be formatted with sharps and octaves.
@@ -45,7 +45,7 @@ def note_to_semitone(note, octave=_CONCERT_OCTAVE):
     return 12 * (octave - 5) + note_val + _MIDDLE_C_SEMITONE
 
 
-def semitone_to_frequency(value):
+def note_to_frequency(value):
     """
     Converts a semitone value to a frequency
     """
@@ -53,16 +53,16 @@ def semitone_to_frequency(value):
     return frequency
 
 
-def note_to_frequency(note, octave=_CONCERT_OCTAVE):
+def notestring_to_frequency(note, octave=_CONCERT_OCTAVE):
     """
     Converts a string note to a frequency.
     Notes can be formatted with sharps and octaves.
     e.g. A6, B4b
     """
-    return semitone_to_frequency(note_to_semitone(note, octave))
+    return note_to_frequency(notestring_to_note(note, octave))
 
 
-def frequency_to_semitone(frequency):
+def frequency_to_note(frequency):
     """
     Takes a frequency in Hz, returns a semitone
     """
@@ -71,7 +71,7 @@ def frequency_to_semitone(frequency):
     return semitone
 
 
-def semitone_to_note(semitone):
+def note_to_notestring(semitone):
     """
     Takes a semitone value, returns a string note representation,
     i.e. something like A4b
@@ -95,8 +95,8 @@ def semitone_to_note(semitone):
     return note
 
 
-def frequency_to_note(frequency):
-    return semitone_to_note(frequency_to_semitone())
+def frequency_to_notestring(frequency):
+    return note_to_notestring(frequency_to_note(frequency))
 
 
 def generate_note(duration, amplitude, frequency, Fs=44100):
@@ -132,7 +132,7 @@ def generate_note(duration, amplitude, frequency, Fs=44100):
 
 def merge_audio(to_samples, merge_samples):
     """
-    Merges the merge samples into the to_samples
+    Merges the merge_samples into the to_samples
     """
     diff = len(to_samples) - len(merge_samples)
     if diff > 0:
