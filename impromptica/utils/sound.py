@@ -180,6 +180,14 @@ def seconds_to_samples(duration, Fs=44100):
     return int(Fs * duration)
 
 
+def samples_to_seconds(samples, Fs=44100):
+    """
+    Converts a duration in samples to the corresponding number of seconds.
+    Defaults to a sampling frequency of 44100 Hz
+    """
+    return float(samples) / Fs
+
+
 def write_wav(samples, filename, audio_format, Fs=44100, stereo=False):
     """
     Write the numpy samples to a wav file.
