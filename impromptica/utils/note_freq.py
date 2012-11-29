@@ -95,18 +95,19 @@ def frequencies(onsets, samples, Fs=44100):
 
 
 def frequency_to_note(freq):
-    if freq < 1:
-        freq = 1
-    return round(12 * math.log(freq / 440.0) / math.log(2))
+    """Returns the closest note value of the given frequency."""
+    if freq < 1.0:
+        freq = 1.0
+    return -int(round(12.0 * math.log(freq / 261.63) / math.log(2))) + 60
 
 
 def note_to_frequency(n):
     """Returns the frequency of the given note value.
-    
+
     Our mapping of note values to frequencies matches the common convention
     that the note C4 (middle C) is represented by the note value 60.
     """
-    return 261.63 * 2 ** (n / 12.0)
+    return 261.63 * (2.0 ** ((60 - n) / 12.0))
 
 
 def equal_temperament_note(freq):
