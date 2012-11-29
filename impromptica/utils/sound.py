@@ -12,21 +12,22 @@ _num_channels = 1
 # In Hz, used for Equal Temperament
 _MIDDLE_C_SEMITONE = 60
 _MIDDLE_C = 261.63
-_CONCERT_OCTAVE = 5
+_MIDDLE_OCTAVE = 4
+_C_SEMITONE = 4
 
 # Notes map to their semitones (there are 12)
 NOTES = {
-    "A":    0,
-    "B":    2,
-    "C":    4,
-    "D":    6,
-    "E":    8,
-    "F":    9,
-    "G":    11,
+    "C":    0,
+    "D":    2,
+    "E":    4,
+    "F":    5,
+    "G":    7,
+    "A":    9,
+    "B":    11,
 }
 
 
-def notestring_to_note(note, octave=_CONCERT_OCTAVE):
+def notestring_to_note(note, octave=_MIDDLE_OCTAVE):
     """
     Converts a note string into a semitone.
     Notes can be formatted with sharps and octaves.
@@ -37,12 +38,16 @@ def notestring_to_note(note, octave=_CONCERT_OCTAVE):
 
     potential_octave = filter(str.isdigit, note)
     if potential_octave:
-        octave = potential_octave
+        octave = int(potential_octave)
 
     note_val = NOTES.get(note[0])
     note_val += sharps - flats
 
-    return 12 * (octave - 5) + note_val + _MIDDLE_C_SEMITONE
+    note = (_MIDDLE_OCTAVE - octave) * note_val + _MIDDLE_C_SEMITONE
+    if octave == _MIDDLE_OCTAVE:
+        note += note_val
+
+    return note
 
 
 def note_to_frequency(value):
@@ -53,7 +58,7 @@ def note_to_frequency(value):
     return frequency
 
 
-def notestring_to_frequency(note, octave=_CONCERT_OCTAVE):
+def notestring_to_frequency(note, octave=_MIDDLE_OCTAVE):
     """
     Converts a string note to a frequency.
     Notes can be formatted with sharps and octaves.
@@ -76,7 +81,11 @@ def note_to_notestring(semitone):
     Takes a semitone value, returns a string note representation,
     i.e. something like A4b
     """
-    octave = (semitone - _MIDDLE_C_SEMITONE) / 12 + _CONCERT_OCTAVE
+    octave = round((_MIDDLE_C_SEMITONE - semitone) / 12.0) + _MIDDLE_OCTAVE
+
+    semitone = _MIDDLE_C_SEMITONE - semitone
+    if abs(semitone) >= 12:
+        semitone /= 12
 
     # Get the corresponding key, append the octave,
     # and adjust for flats / sharps
@@ -88,7 +97,7 @@ def note_to_notestring(semitone):
 
     semitone_to_note_dict = {value: key for key, value in NOTES.items()}
     note = str(semitone_to_note_dict[semitone])
-    note += str(octave - 5)
+    note += str(int(octave))
     if append_flat:
         note += "b"
 
@@ -143,7 +152,8 @@ def merge_audio(to_samples, merge_samples):
         return
 
     to_samples += merge_samples
-    to_samples /= numpy.max(to_samples)
+    if numpy.max(to_samples) > 1:
+        to_samples /= numpy.max(to_samples)
 
 
 def generate_chord(duration, amplitude, frequencies, Fs=44100):
