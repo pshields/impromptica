@@ -156,12 +156,18 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
     notenum = frequency_to_note(frequency)
 
     curdir = os.path.dirname(__file__)
+
+    if not os.path.exists(os.path.join(curdir, "soundfonts/FluidR3_GM.sf2")):
+        print "Warning: FluidR3_GM.sf2 not found under soundfonts!" \
+              "Generating square wave..."
+        return generate_note(duration, amplitude, frequency)
+
     fs = fluidsynth.Synth()
     fs.start(driver="alsa")
     soundfont_id = fs.sfload(os.path.join(curdir, "soundfonts/FluidR3_GM.sf2"))
     fs.program_select(0, soundfont_id, 0, 0)
 
-    #Generate at medium amplitude to avoid artifacts
+    # Generate at medium amplitude to avoid artifacts
     fs.noteon(0, notenum, int(amplitude * 50))
     note = fs.get_samples(seconds_to_samples(duration, Fs))
     fs.noteoff(0, notenum)
@@ -173,7 +179,7 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
     mono_note = note[mono_note_indices]
     mono_note = mono_note.astype(float)
 
-    #Audiolab compliancy, amplitude adjustment
+    # Audiolab compliancy, amplitude adjustment
     mono_note /= numpy.max(mono_note)
     mono_note *= amplitude
 
