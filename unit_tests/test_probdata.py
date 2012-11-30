@@ -22,11 +22,11 @@ class TestProbabilitiesSumToOne(unittest.TestCase):
         return "sum %f not in [%f, %f]" % (s, self.l, self.r)
 
     def test_major_key_profile(self):
-        s = sum(probdata.MAJOR_KEY_PROFILE_DATA)
+        s = sum(probdata.ESSEN_MAJOR_KEY_PROFILE_DATA)
         assert self.l <= s <= self.r, self.error_message(s)
 
     def test_minor_key_profile(self):
-        s = sum(probdata.MINOR_KEY_PROFILE_DATA)
+        s = sum(probdata.ESSEN_MINOR_KEY_PROFILE_DATA)
         assert self.l <= s <= self.r, self.error_message(s)
 
     def test_proximity_profile(self):
