@@ -11,7 +11,7 @@ from scikits.audiolab import Sndfile
 from copy import deepcopy
 
 
-def gen_basic_accompaniment(audiofile):
+def gen_basic_accompaniment(audiofile, use_midi):
     f = Sndfile(audiofile, 'r')
     format = f.format
     Fs = f.samplerate
@@ -44,7 +44,11 @@ def gen_basic_accompaniment(audiofile):
             print "Frequency (Hz): ", frequency
             num_samples = next_onset - onset
             time_elapsed = sound.samples_to_seconds(num_samples, Fs)
-            merged_note = sound.generate_note(time_elapsed, 0.5, frequency)
+
+            if use_midi:
+                merged_note = sound.gen_midi_note(time_elapsed, 0.5, frequency)
+            else:
+                merged_note = sound.generate_note(time_elapsed, 0.5, frequency)
 
             next_onset = int(onset + len(merged_note))
             if next_onset > len(samples):
@@ -67,5 +71,8 @@ parser.add_argument('input_file', help=(
     'libsndfile. For a list of compatible formats, see '
     'http://www.mega-nerd.com/libsndfile/.'))
 
+parser.add_argument('--use_midi', help=(
+    'Generate midi notes instead of square waves'), action='store_true')
+
 args = parser.parse_args()
-gen_basic_accompaniment(args.input_file)
+gen_basic_accompaniment(args.input_file, args.use_midi)
