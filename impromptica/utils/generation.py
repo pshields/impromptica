@@ -23,9 +23,9 @@ def generate_note(previous_note, central_note, key):
 
     # Select the major or minor key profile based on the key.
     if keys.is_major_key(key):
-        key_profile_data = probdata.MAJOR_KEY_PROFILE_DATA
+        key_profile_data = probdata.ESSEN_MAJOR_KEY_PROFILE_DATA
     else:
-        key_profile_data = probdata.MINOR_KEY_PROFILE_DATA
+        key_profile_data = probdata.ESSEN_MINOR_KEY_PROFILE_DATA
 
     kp = probabilities.build_key_profile(key_profile_data, key)
 
