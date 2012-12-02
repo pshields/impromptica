@@ -17,8 +17,8 @@ def generate_note(previous_note, central_note, key):
     `central_note` is the mean note value of the musical piece we are
     generating a note for.
 
-    `key` is a list of notes in the current key, where the first note in the
-    list is the base note of the key.
+    `key` is a (tonic, is_major) tuple where `tonic` is the base note of the
+    key, and `is_major` is 1 if the key is a major key and 0 otherwise.
     """
 
     # Select the major or minor key profile based on the key.

@@ -110,6 +110,11 @@ def note_to_frequency(n):
     return 261.63 * (2.0 ** ((60 - n) / 12.0))
 
 
+def pitch_class(note):
+    """Returns the pitch class for a given note."""
+    return note % 12
+
+
 def equal_temperament_note(freq):
     return note_to_frequency(frequency_to_note(freq))
 
