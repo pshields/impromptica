@@ -8,8 +8,10 @@ class TestKeyfinding(unittest.TestCase):
     def setUp(self):
         self.test_keys = []
         for tonic in range(12):
-            self.test_keys.append([[tonic, tonic+4, tonic+7], [tonic, 1]]) # major chord
-        #    self.test_keys.append([[tonic, tonic+3, tonic+7], [tonic, 0]]) # minor chord
+            # test major chord
+            self.test_keys.append([[tonic, tonic + 4, tonic + 7], [tonic, 1]])
+            # test minor chord
+            #self.test_keys.append([[tonic, tonic + 3, tonic + 7], [tonic, 0]])
 
     @staticmethod
     def error_message(found_key, correct_key):

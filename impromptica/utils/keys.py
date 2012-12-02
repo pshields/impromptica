@@ -20,13 +20,13 @@ def get_keys(samples, onsets, frequency):
 
     # Divide the piece into segments. For now, we say each beat is a segment.
     beats_per_minute = tempo.map_pass(samples, frequency, 1, 400)
-    
+
     samples_per_beat = frequency * 60.0 / beats_per_minute
     for i in range(int(len(samples) / samples_per_beat)):
         # Get the notes on this segment.
         segment_frequencies = []
         for index, frequency_list in frequencies.iteritems():
-            if samples_per_beat*i <= index < samples_per_beat*(i+1):
+            if samples_per_beat * i <= index < samples_per_beat * (i + 1):
                 segment_frequencies.extend(frequency_list)
         notes = [sound.frequency_to_note(f) for f in segment_frequencies]
         # Get the pitch classes in this segment.
@@ -39,9 +39,11 @@ def get_keys(samples, onsets, frequency):
                 key_profile_data = probdata.KP_MAJOR_KEY_PROFILE_DATA
             else:
                 key_profile_data = probdata.KP_MINOR_KEY_PROFILE_DATA
-            for tonic in range(12):    
-                kp = probabilities.build_key_profile(key_profile_data, [tonic, is_major])
-                adjusted_pitch_classes = [(note - tonic) % 12 for note in pitch_classes]
+            for tonic in range(12):
+                kp = probabilities.build_key_profile(key_profile_data,
+                                                     [tonic, is_major])
+                adjusted_pitch_classes = [(note - tonic) % 12 for note in
+                                          pitch_classes]
                 p = 1.0
                 for scale_degree in range(12):
                     if scale_degree in adjusted_pitch_classes:
