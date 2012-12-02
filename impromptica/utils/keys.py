@@ -26,7 +26,8 @@ def get_keys(samples, onsets, frequency):
         # Get the notes on this segment.
         segment_frequencies = []
         for index, frequency_list in frequencies.iteritems():
-            if samples_per_segment * i <= index < samples_per_segment * (i + 1):
+            if samples_per_segment * i <= index < (samples_per_segment *
+                                                   (i + 1)):
                 segment_frequencies.extend(frequency_list)
         notes = [sound.frequency_to_note(f) for f in segment_frequencies]
         print('Notes detected for keyfinding: %s' % (notes))
