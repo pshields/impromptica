@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import time
 import numpy
 import fluidsynth
 import math
@@ -54,7 +55,7 @@ def note_to_frequency(value):
     """
     Converts a semitone value to a frequency
     """
-    frequency = _MIDDLE_C * 2 ** ((_MIDDLE_C_SEMITONE - value) / 12.0)
+    frequency = _MIDDLE_C * 2 ** ((value - _MIDDLE_C_SEMITONE) / 12.0)
     return frequency
 
 
@@ -81,11 +82,9 @@ def note_to_notestring(semitone):
     Takes a semitone value, returns a string note representation,
     i.e. something like A4b
     """
-    octave = round((_MIDDLE_C_SEMITONE - semitone) / 12.0) + _MIDDLE_OCTAVE
+    octave = round((semitone - _MIDDLE_C_SEMITONE) / 12.0) + _MIDDLE_OCTAVE
 
-    semitone = _MIDDLE_C_SEMITONE - semitone
-    if abs(semitone) >= 12:
-        semitone /= 12
+    semitone = semitone % 12
 
     # Get the corresponding key, append the octave,
     # and adjust for flats / sharps
@@ -138,8 +137,7 @@ def generate_note(duration, amplitude, frequency, Fs=44100):
 
     note = samples * dampening
 
-    offset = len(note) / 4
-    return note[offset:-offset]
+    return note
 
 
 def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
@@ -162,10 +160,14 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
     fs.program_select(0, soundfont_id, 0, 0)
 
     #Generate at medium amplitude to avoid artifacts
+    #Generate at medium amplitude to avoid artifacts
     fs.noteon(0, notenum, int(amplitude * 50))
     note = fs.get_samples(seconds_to_samples(duration, Fs))
     fs.noteoff(0, notenum)
+
+    time.sleep(0.1)
     fs.delete()
+    time.sleep(0.1)
 
     # Note is a stereo value by default, twice as long as it should be.
     # Make it mono. Values are interleaved, so sample every other one
@@ -176,6 +178,8 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
     #Audiolab compliancy, amplitude adjustment
     mono_note /= numpy.max(mono_note)
     mono_note *= amplitude
+    dampening = hamming(len(mono_note))
+    mono_note *= dampening
 
     return mono_note
 
