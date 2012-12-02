@@ -8,7 +8,6 @@ the result to standard output.
 import argparse
 from impromptica.utils import onsets, note_freq, sound
 from scikits.audiolab import Sndfile
-from copy import deepcopy
 
 
 def gen_basic_accompaniment(audiofile, use_midi):
@@ -20,9 +19,6 @@ def gen_basic_accompaniment(audiofile, use_midi):
     # Just support mono sound for now
     if samples.ndim > 1:
         samples = samples.sum(axis=1)
-
-    #To help preserve relative amplitude
-    samples_copy = deepcopy(samples)
 
     # NOTE: Make onsets accept samples instead of a filename
     note_onsets, _, _ = onsets.get_onsets(audiofile)
@@ -38,17 +34,26 @@ def gen_basic_accompaniment(audiofile, use_midi):
 
         print "\033[0;36m",
         print "Note %d" % onsetnum,
-        print "\033[0;0m"
+        print "\033[0;0m\t",
 
         for frequency in notes:
-            print "Frequency (Hz): ", frequency
+            print "\033[0;32m",
+            print "Frequency (Hz): %f" % frequency,
+            print "\033[0;0m\t",
+
+            print "\033[0;33m",
+            print "Note: %s" % sound.frequency_to_notestring(frequency),
+            print "\033[0;0m"
             num_samples = next_onset - onset
             time_elapsed = sound.samples_to_seconds(num_samples, Fs)
 
             if use_midi:
-                merged_note = sound.gen_midi_note(time_elapsed, 0.5, frequency)
+                #Default to trumpet
+                merged_note = sound.gen_midi_note(time_elapsed, 0.5, frequency,
+                                                  Fs, 56)
             else:
-                merged_note = sound.generate_note(time_elapsed, 0.5, frequency)
+                merged_note = sound.generate_note(time_elapsed, 0.5, frequency,
+                                                  Fs)
 
             next_onset = int(onset + len(merged_note))
             if next_onset > len(samples):
@@ -56,9 +61,6 @@ def gen_basic_accompaniment(audiofile, use_midi):
                 merged_note[:next_onset - onset]
 
             sound.merge_audio(samples[onset: next_onset], merged_note)
-
-    #Pull up the amplitude of the original samples, since they've been lowered
-    sound.merge_audio(samples, samples_copy)
 
     accompanied_name = audiofile[:-4] + "_accompanied"
     accompanied_file = Sndfile(accompanied_name + ".wav", "w", format, 1, Fs)
