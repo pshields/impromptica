@@ -91,6 +91,11 @@ def frequencies(onsets, samples, Fs=44100):
     return notes
 
 
+def pitch_class(note):
+    """Returns the pitch class for a given note."""
+    return note % 12
+
+
 def equal_temperament_note(freq):
     return note_to_frequency(frequency_to_note(freq))
 

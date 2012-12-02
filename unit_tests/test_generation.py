@@ -3,7 +3,7 @@ import random
 import unittest
 
 from impromptica import settings
-from impromptica import utils
+from impromptica.utils import generation
 
 
 class TestNoteGeneration(unittest.TestCase):
@@ -31,5 +31,5 @@ class TestNoteGeneration(unittest.TestCase):
         # For parameters to `generate_note`, we use all permutations of length
         # three of the notes in `test_notes`.
         for args in itertools.permutations(self.test_notes, 3):
-            note = utils.generate_note(args[0], args[1], [args[2]])
+            note = generation.generate_note(args[0], args[1], [args[2]])
             assert note in self.valid_notes, "%d is not a valid note" % (note)
