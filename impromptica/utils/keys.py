@@ -18,17 +18,18 @@ def get_keys(samples, onsets, frequency):
     # Get the frequencies of the piece, and their onsets.
     frequencies = note_freq.frequencies(onsets, samples, frequency)
 
-    # Divide the piece into segments. For now, we say each beat is a segment.
+    # Divide the piece into segments. For now, we say a segment is four beats.
     beats_per_minute = tempo.map_pass(samples, frequency, 1, 400)
 
-    samples_per_beat = frequency * 60.0 / beats_per_minute
-    for i in range(int(len(samples) / samples_per_beat)):
+    samples_per_segment = frequency * 60.0 / beats_per_minute * 4.0
+    for i in range(int(len(samples) / samples_per_segment)):
         # Get the notes on this segment.
         segment_frequencies = []
         for index, frequency_list in frequencies.iteritems():
-            if samples_per_beat * i <= index < samples_per_beat * (i + 1):
+            if samples_per_segment * i <= index < samples_per_segment * (i + 1):
                 segment_frequencies.extend(frequency_list)
         notes = [sound.frequency_to_note(f) for f in segment_frequencies]
+        print('Notes detected for keyfinding: %s' % (notes))
         # Get the pitch classes in this segment.
         pitch_classes = list(set([note_freq.pitch_class(n) for n in notes]))
         # Calculate the modulation score of this segment.
