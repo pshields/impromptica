@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-
+import time
 import numpy
+import fluidsynth
 import math
+import os
 from scikits.audiolab import Sndfile
 from scipy import hamming
 
@@ -13,7 +15,6 @@ _num_channels = 1
 _MIDDLE_C_SEMITONE = 60
 _MIDDLE_C = 261.63
 _MIDDLE_OCTAVE = 4
-_C_SEMITONE = 4
 
 # Notes map to their semitones (there are 12)
 NOTES = {
@@ -54,7 +55,7 @@ def note_to_frequency(value):
     """
     Converts a semitone value to a frequency
     """
-    frequency = _MIDDLE_C * 2 ** ((_MIDDLE_C_SEMITONE - value) / 12.0)
+    frequency = _MIDDLE_C * 2 ** ((value - _MIDDLE_C_SEMITONE) / 12.0)
     return frequency
 
 
@@ -71,8 +72,8 @@ def frequency_to_note(frequency):
     """
     Takes a frequency in Hz, returns a semitone
     """
-    semitone = -int(round(12.0 * math.log(frequency / _MIDDLE_C) /
-                    math.log(2))) + _MIDDLE_C_SEMITONE
+    semitone = int(round(12.0 * math.log(frequency / _MIDDLE_C) /
+                   math.log(2))) + _MIDDLE_C_SEMITONE
     return semitone
 
 
@@ -81,18 +82,16 @@ def note_to_notestring(semitone):
     Takes a semitone value, returns a string note representation,
     i.e. something like A4b
     """
-    octave = round((_MIDDLE_C_SEMITONE - semitone) / 12.0) + _MIDDLE_OCTAVE
+    octave = round((semitone - _MIDDLE_C_SEMITONE) / 12.0) + _MIDDLE_OCTAVE
 
-    semitone = _MIDDLE_C_SEMITONE - semitone
-    if abs(semitone) >= 12:
-        semitone /= 12
+    semitone = semitone % 12
 
     # Get the corresponding key, append the octave,
     # and adjust for flats / sharps
     # Default to flat if adjustment is necessary
     append_flat = False
     if semitone not in NOTES.values():
-        semitone -= 1
+        semitone += 1
         append_flat = True
 
     semitone_to_note_dict = {value: key for key, value in NOTES.items()}
@@ -136,7 +135,53 @@ def generate_note(duration, amplitude, frequency, Fs=44100):
         else:
             samples.append(-amplitude)
 
-    return samples * dampening
+    note = samples * dampening
+
+    return note
+
+
+def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
+    """
+    Generate a midi note.
+    Duration: Time in seconds of clip
+    Amplitude: Volume of the note, between 0 and 1
+    Frequency: In Hz
+    Fs: Sampling Rate. Defaults to 44100
+    Instrument: 0-127 General Midi number
+        Default to Acoustic Grand Piano
+        http://en.wikipedia.org/wiki/General_MIDI
+    """
+    notenum = frequency_to_note(frequency)
+
+    curdir = os.path.dirname(__file__)
+    fs = fluidsynth.Synth()
+    fs.start(driver="alsa")
+    soundfont_id = fs.sfload(os.path.join(curdir, "soundfonts/FluidR3_GM.sf2"))
+    fs.program_select(0, soundfont_id, 0, 0)
+
+    #Generate at medium amplitude to avoid artifacts
+    #Generate at medium amplitude to avoid artifacts
+    fs.noteon(0, notenum, int(amplitude * 50))
+    note = fs.get_samples(seconds_to_samples(duration, Fs))
+    fs.noteoff(0, notenum)
+
+    time.sleep(0.1)
+    fs.delete()
+    time.sleep(0.1)
+
+    # Note is a stereo value by default, twice as long as it should be.
+    # Make it mono. Values are interleaved, so sample every other one
+    mono_note_indices = numpy.arange(0, len(note), 2)
+    mono_note = note[mono_note_indices]
+    mono_note = mono_note.astype(float)
+
+    #Audiolab compliancy, amplitude adjustment
+    mono_note /= numpy.max(mono_note)
+    mono_note *= amplitude
+    dampening = hamming(len(mono_note))
+    mono_note *= dampening
+
+    return mono_note
 
 
 def merge_audio(to_samples, merge_samples):

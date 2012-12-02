@@ -4,3 +4,4 @@ scipy
 scikits.audiolab
 h5py
 matplotlib
+pyFluidSynth

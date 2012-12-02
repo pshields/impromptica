@@ -1,6 +1,9 @@
 import unittest
 
+import numpy
+
 from impromptica import utils
+from impromptica.utils import sound
 
 
 class TestKeyfinding(unittest.TestCase):
@@ -22,6 +25,10 @@ class TestKeyfinding(unittest.TestCase):
 
         for notes, correct_key in self.test_keys:
             frequencies = [utils.note_to_frequency(note) for note in notes]
-            samples = utils.generate_chord(1.0, 0.8, frequencies)
+            samples = []
+            for i in range(6):
+                for frequency in frequencies:
+                    samples = numpy.append(samples, sound.generate_note(1.0, 0.8, frequency))
+            print(samples)
             key = utils.get_keys(samples, [0], 44100)[0]
             assert key == correct_key, self.error_message(key, correct_key)
