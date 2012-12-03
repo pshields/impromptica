@@ -69,10 +69,10 @@ def get_keys(samples, onsets, frequency, samples_per_segment=None):
 def is_major_key(key):
     """Returns whether or not the given key is a major key.
 
-    `key` is a list of note values, where the first note is the base note
-    of the key.
+    `key` is a (tonic, is_major) tuple where `tonic` is the base note of the
+    key, and `is_major` is 1 if the key is a major key and 0 otherwise.
     """
-    return True  # TODO Put some better logic here.
+    return key[1] == 1
 
 
 def notes_in_key(key):
