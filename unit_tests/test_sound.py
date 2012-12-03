@@ -56,4 +56,4 @@ class TestSoundGeneration(unittest.TestCase):
         assert sound.note_to_notestring(60) == "C4"
 
     def test_note_to_frequency(self):
-        assert abs(sound.note_to_frequency(51) - 440) < 0.5
+        assert abs(sound.note_to_frequency(69) - 440) < 0.5
