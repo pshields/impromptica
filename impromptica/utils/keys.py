@@ -73,3 +73,13 @@ def is_major_key(key):
     of the key.
     """
     return True  # TODO Put some better logic here.
+
+
+def notes_in_key(key):
+    """Returns the major or minor chord for the given key."""
+    tonic = key[0]
+    if key[1] == 1:
+        notes = [60 + tonic, 64 + tonic, 67 + tonic]
+    else:
+        notes = [60 + tonic, 63 + tonic, 67 + tonic]
+    return notes

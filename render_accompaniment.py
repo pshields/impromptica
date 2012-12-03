@@ -6,8 +6,13 @@ Uses Impromptica to add accompaniment to the given input audio file. Writes
 the result to standard output.
 """
 import argparse
-from impromptica.utils import onsets, note_freq, sound
+
 from scikits.audiolab import Sndfile
+
+from impromptica.utils import keys
+from impromptica.utils import onsets
+from impromptica.utils import note_freq
+from impromptica.utils import sound
 
 
 def gen_basic_accompaniment(audiofile, use_midi):
@@ -20,8 +25,11 @@ def gen_basic_accompaniment(audiofile, use_midi):
     if samples.ndim > 1:
         samples = samples.sum(axis=1)
 
-    # NOTE: Make onsets accept samples instead of a filename
-    note_onsets, _, _ = onsets.get_onsets(audiofile)
+    f = Sndfile(audiofile, 'r')  	
+    frame_rate = f.samplerate  	
+    samples = f.read_frames(f.nframes)
+    note_onsets, _, _ = onsets.get_onsets(samples, frame_rate)
+    key_list = keys.get_keys(samples, note_onsets, Fs)
     note_frequencies = note_freq.frequencies(note_onsets, samples, Fs)
 
     # For each onset, match detected freqeuncies with square waves
@@ -35,6 +43,11 @@ def gen_basic_accompaniment(audiofile, use_midi):
         print "\033[0;36m",
         print "Note %d" % onsetnum,
         print "\033[0;0m\t",
+
+        # add an accompanied note in the key
+        key = [k for k in key_list if k[0] >= onset][0]
+
+        notes = keys.notes_in_key(key)
 
         for frequency in notes:
             print "\033[0;32m",
