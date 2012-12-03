@@ -3,6 +3,7 @@ import unittest
 import numpy
 
 from impromptica.utils import keys
+from impromptica.utils import onsets
 from impromptica.utils import sound
 
 
@@ -32,6 +33,7 @@ class TestKeyfinding(unittest.TestCase):
                 for f in frequencies:
                     note_samples = sound.generate_note(0.2, 0.8, f)
                     samples = numpy.append(samples, note_samples)
-            sound.write_wav(samples, "temp.wav")
-            key = keys.get_keys(samples, [0], 44100)[0][1]
+            onset_list = onsets.get_onsets(samples, 44100)[0]
+            #sound.write_wav(samples, "temp.wav")
+            key = keys.get_keys(samples, onset_list, 44100)[0][1]
             assert key == correct_key, self.error_message(key, correct_key)
