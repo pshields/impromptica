@@ -62,7 +62,7 @@ def get_keys(samples, onsets, frequency, samples_per_segment=None):
                 if p > best_probability:
                     best_key = [tonic, is_major]
                     best_probability = p
-        result.append([i, best_key])
+        result.append([i * samples_per_segment, best_key])
     return result
 
 
