@@ -1,4 +1,6 @@
 """Impromptica utilities for key-finding."""
+import math
+
 from impromptica import probdata
 from impromptica.utils import note_freq
 from impromptica.utils import probabilities
@@ -6,23 +8,28 @@ from impromptica.utils import sound
 from impromptica.utils import tempo
 
 
-def get_keys(samples, onsets, frequency):
+def get_keys(samples, onsets, frequency, samples_per_segment=None):
     """Returns a list of (index, key) tuples with the keys of the piece,
     where `index` is the index of `samples` where the `key` begins.
 
     This function uses part of the polyphonic keyfinding algorithm presented
     in "Music and Probability" (Temperley 2007.)
+
+    TODO Implement calculations for the probability of changing key from
+    segment to segment.
     """
     result = []
 
     # Get the frequencies of the piece, and their onsets.
     frequencies = note_freq.frequencies(onsets, samples, frequency)
 
-    # Divide the piece into segments. For now, we say a segment is four beats.
-    beats_per_minute = tempo.map_pass(samples, frequency, 1, 400)
+    # Divide the piece into segments. A segment is 4 beats unless otherwise
+    # specified.
+    if not samples_per_segment:
+        beats_per_minute = tempo.map_pass(samples, frequency, 1, 400)
+        samples_per_segment = frequency * 60.0 / beats_per_minute * 4.0
 
-    samples_per_segment = frequency * 60.0 / beats_per_minute * 4.0
-    for i in range(int(len(samples) / samples_per_segment)):
+    for i in range(int(math.ceil(len(samples) / samples_per_segment))):
         # Get the notes on this segment.
         segment_frequencies = []
         for index, frequency_list in frequencies.iteritems():
