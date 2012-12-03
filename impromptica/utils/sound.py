@@ -4,6 +4,7 @@ import numpy
 import fluidsynth
 import math
 import os
+from scikits.audiolab import Format
 from scikits.audiolab import Sndfile
 from scipy import hamming
 
@@ -52,8 +53,10 @@ def notestring_to_note(note, octave=_MIDDLE_OCTAVE):
 
 
 def note_to_frequency(value):
-    """
-    Converts a semitone value to a frequency
+    """Returns the frequency of the given note value.
+
+    Our mapping of note values to frequencies matches the common convention
+    that the note C4 (middle C) is represented by the note value 60.
     """
     frequency = _MIDDLE_C * 2 ** ((value - _MIDDLE_C_SEMITONE) / 12.0)
     return frequency
@@ -69,12 +72,9 @@ def notestring_to_frequency(note, octave=_MIDDLE_OCTAVE):
 
 
 def frequency_to_note(frequency):
-    """
-    Takes a frequency in Hz, returns a semitone
-    """
-    semitone = int(round(12.0 * math.log(frequency / _MIDDLE_C) /
-                   math.log(2))) + _MIDDLE_C_SEMITONE
-    return semitone
+    """Returns the closest note value of the given frequency (in Hz.)"""
+    return (int(round(12.0 * math.log(frequency / _MIDDLE_C) / math.log(2))) +
+            _MIDDLE_C_SEMITONE)
 
 
 def note_to_notestring(semitone):
@@ -233,7 +233,8 @@ def samples_to_seconds(samples, Fs=44100):
     return float(samples) / Fs
 
 
-def write_wav(samples, filename, audio_format, Fs=44100, stereo=False):
+def write_wav(samples, filename, audio_format=Format(), Fs=44100,
+              stereo=False):
     """
     Write the numpy samples to a wav file.
     Audio format expects an Sndfile.format object.
