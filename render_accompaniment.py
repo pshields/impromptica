@@ -27,7 +27,7 @@ def gen_basic_accompaniment(audiofile, use_midi):
 
     note_onsets, _, _ = onsets.get_onsets(samples, Fs)
     key_list = keys.get_keys(samples, note_onsets, Fs)
-    
+
     note_frequencies = note_freq.frequencies(note_onsets, samples, Fs)
 
     # For each onset, match detected freqeuncies with square waves
@@ -47,7 +47,7 @@ def gen_basic_accompaniment(audiofile, use_midi):
         if upcoming_keys:
             key = upcoming_keys[len(upcoming_keys) - 1][1]
             notes = [sound.note_to_frequency(n) for n in
-                        keys.notes_in_key(key)]
+                     keys.notes_in_key(key)]
 
         for frequency in notes:
             print "\033[0;32m",

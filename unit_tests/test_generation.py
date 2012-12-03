@@ -31,5 +31,15 @@ class TestNoteGeneration(unittest.TestCase):
         # For parameters to `generate_note`, we use all permutations of length
         # three of the notes in `test_notes`.
         for args in itertools.permutations(self.test_notes, 3):
-            note = generation.generate_note(args[0], args[1], [args[2]])
+            note = generation.generate_note(args[0], args[1],
+                                            [(args[2] % 12), 1])
             assert note in self.valid_notes, "%d is not a valid note" % (note)
+
+    def test_generate_chord(self):
+        for is_major in range(2):
+            for tonic in range(12):
+                key = [tonic, is_major]
+                notes = generation.generate_chord(key)
+                for note in notes:
+                    assert 60 <= note <= 72, (
+                        "note %d not in expected range" % (note))
