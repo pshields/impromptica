@@ -54,3 +54,20 @@ def generate_note(previous_note, central_note, key):
             x = x - weight
 
     return result_note
+
+
+def generate_chord(key):
+    """Returns a chord (list of notes)."""
+
+    if keys.is_major_key(key):
+        kp_data = probdata.KP_MAJOR_KEY_PROFILE_DATA
+    else:
+        kp_data = probdata.KP_MINOR_KEY_PROFILE_DATA
+
+    result = []
+    for scale_degree in range(12):
+        x = random.uniform(0.0, 1.0)
+        if x < kp_data[scale_degree]:
+            result.append(scale_degree)
+
+    return [60 + (key[0] + scale_degree) % 12 for scale_degree in result]
