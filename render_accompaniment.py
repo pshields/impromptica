@@ -25,11 +25,9 @@ def gen_basic_accompaniment(audiofile, use_midi):
     if samples.ndim > 1:
         samples = samples.sum(axis=1)
 
-    f = Sndfile(audiofile, 'r')  	
-    frame_rate = f.samplerate  	
-    samples = f.read_frames(f.nframes)
-    note_onsets, _, _ = onsets.get_onsets(samples, frame_rate)
+    note_onsets, _, _ = onsets.get_onsets(samples, Fs)
     key_list = keys.get_keys(samples, note_onsets, Fs)
+    
     note_frequencies = note_freq.frequencies(note_onsets, samples, Fs)
 
     # For each onset, match detected freqeuncies with square waves
@@ -45,9 +43,11 @@ def gen_basic_accompaniment(audiofile, use_midi):
         print "\033[0;0m\t",
 
         # add an accompanied note in the key
-        key = [k for k in key_list if k[0] >= onset][0]
-
-        notes = keys.notes_in_key(key)
+        upcoming_keys = [k for k in key_list if k[0] <= onset]
+        if upcoming_keys:
+            key = upcoming_keys[len(upcoming_keys) - 1][1]
+            notes = [sound.note_to_frequency(n) for n in
+                        keys.notes_in_key(key)]
 
         for frequency in notes:
             print "\033[0;32m",
