@@ -45,7 +45,7 @@ def notestring_to_note(note, octave=_MIDDLE_OCTAVE):
     note_val = NOTES.get(note[0])
     note_val += sharps - flats
 
-    note = (_MIDDLE_OCTAVE - octave) * note_val + _MIDDLE_C_SEMITONE
+    note = (octave - _MIDDLE_OCTAVE) * note_val + _MIDDLE_C_SEMITONE
     if octave == _MIDDLE_OCTAVE:
         note += note_val
 
