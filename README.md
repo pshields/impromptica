@@ -8,7 +8,7 @@ Installation
 
 On Ubuntu, install the following dependencies:
 
-    sudo apt-get install libfftw3-dev libhdf5-serial-dev swig
+    sudo apt-get install hydrogen libfftw3-dev libhdf5-serial-dev swig
 
 You may need to run
 
