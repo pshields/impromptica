@@ -185,8 +185,14 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
 
 
 def merge_audio(to_samples, merge_samples):
-    """
-    Merges the merge_samples into the to_samples
+    """Merges two samples arrays and returns the result.
+
+    If the samples arrays are of different lengths, the merged array
+    will have the longer of the two lengths.
+
+    If an amplitude in the merged array would be greater than 1.0,
+    the merged array's amplitudes will be normalized so that the
+    highest amplitude is 1.
     """
     diff = len(to_samples) - len(merge_samples)
     if diff > 0:
