@@ -11,8 +11,10 @@ from scikits.audiolab import Sndfile
 
 from impromptica.utils import keys
 from impromptica.utils import onsets
+from impromptica.utils import percussion
 from impromptica.utils import note_freq
 from impromptica.utils import sound
+from impromptica.utils import tempo
 
 
 def gen_basic_accompaniment(audiofile, use_midi):
@@ -74,6 +76,12 @@ def gen_basic_accompaniment(audiofile, use_midi):
                 merged_note[:next_onset - onset]
 
             sound.merge_audio(samples[onset: next_onset], merged_note)
+
+    # Add percussion.
+    sounds = percussion.get_drumkit_samples()
+    beats_per_minute = tempo.map_pass(samples, Fs, 1, 400)
+    percussion.render_percussion(samples[note_onsets[0]:], Fs,
+                                 beats_per_minute, sounds)
 
     accompanied_name = audiofile[:-4] + "_accompanied"
     accompanied_file = Sndfile(accompanied_name + ".wav", "w", format, 1, Fs)

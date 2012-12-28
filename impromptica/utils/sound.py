@@ -186,9 +186,9 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
 
 def merge_audio(to_samples, merge_samples):
     """Merges `merge_samples` into `to_samples`.
-    
+
     The results are stored in `to_samples`.
-    
+
     `merge_samples` must be of length less than or equal to the
     length of `to_samples`.
 
@@ -205,8 +205,9 @@ def merge_audio(to_samples, merge_samples):
         return
 
     to_samples += merge_samples
-    if numpy.max(to_samples) > 1:
-        to_samples /= numpy.max(to_samples)
+    max_amplitude = numpy.max(to_samples)
+    if max_amplitude > 1:
+        to_samples /= max_amplitude
 
 
 def generate_chord(duration, amplitude, frequencies, Fs=44100):
