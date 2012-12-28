@@ -39,7 +39,6 @@ def get_keys(samples, onsets, frequency, samples_per_segment=None):
         notes = [sound.frequency_to_note(f) for f in segment_frequencies]
         # Get the pitch classes in this segment.
         pitch_classes = list(set([note_freq.pitch_class(n) for n in notes]))
-        print('Pitch classes detected for keyfinding: %s' % (pitch_classes))
         # Calculate the modulation score of this segment.
         best_key = [0, 0]
         best_probability = 0.0
