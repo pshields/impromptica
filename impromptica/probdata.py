@@ -15,8 +15,10 @@ The source code and data for "Music and Probability" (Temperley 2007), which
 we use for much of our probalistic data, is published at
 http://theory.esm.rochester.edu/temperley/music-prob/materials.html.
 """
+import math
 
-from scipy import stats
+import numpy as np
+import scipy.stats
 
 from impromptica import settings
 
@@ -33,10 +35,66 @@ def build_distance_profile_data(standard_deviation):
     value of j - i.
     """
     result = []
-    dist = stats.norm(0, standard_deviation)
+    dist = scipy.stats.norm(0, standard_deviation)
     for i in range(settings.MAX_NOTE + 1):
         result.append(dist.pdf(i))
     return result
+
+
+def build_tempo_profile_data(shape, scale, base_period, max_multiple):
+    """
+    Returns a likelihood table for periods of a metrical level.
+
+    `base_period` is the time in seconds of the base period of which all other
+    period hypotheses will be integer multiples of.
+
+    `max_multiple` is the highest integer multiple by which the base period
+    will be multiplied by for period hypotheses.
+    """
+    result = np.zeros(max_multiple)
+    dist = scipy.stats.lognorm(shape, scale=scale)
+    for i in range(1, max_multiple + 1):
+        result[i - 1] = dist.pdf(base_period * i)
+    return result
+
+
+def build_tempo_change_profile_data(
+        max_multiple,
+        standard_deviation=settings.TEMPO_CHANGE_STANDARD_DEVIATION):
+    """Returns a table of the likelihood of transitions in tempo.
+
+    The table is indexed by the period of the new tempo and the period of the
+    old tempo, where the periods are integers of some base period and range
+    from one to the given `max_multiple`. If the tempos are not being measured
+    in terms of a common base period, consider quantizing the the ratio of the
+    new and old tempos to some fraction and using that with the table generated
+    by this function.
+
+    The table is zero-indexed but the likelihood estimates start at a period
+    value of one, so the likelihood of a tempo change of a/b will be located at
+    result[a-1][b-1].
+
+    As currently implemented, the likelihood of a tempo change is symmetric
+    across inversion, that is, the likelihood of a tempo change of a/b is equal
+    to the likelihood of a tempo change of b/a.
+    """
+    # Precompute the transition probabilities for all possible transitions
+    # between periods. This probability is modeled as a Gaussian distribution
+    # centered at one. A transition from a period of n to m is assigned
+    # likelihood according to the value of the Gaussian distribution at
+    # (log(m/n))^2.
+    dist = scipy.stats.norm(scale=standard_deviation)
+    result = np.zeros((max_multiple, max_multiple))
+    for i in range(max_multiple):
+        for j in range(i + 1):
+            result[i][j] = result[j][i] = dist.pdf(
+                math.pow(math.log((j + 1.) / (i + 1.)), 2.))
+    # Normalize the distribution so that the highest likelihood value is 1.
+    highest = np.max(result, axis=1).max()
+    for i in range(max_multiple):
+        result[i] /= highest
+    return result
+
 
 # This monophonic key profile generated from the Essen corpus provides
 # probabilities of the offset of a note from the tonic note of a major key.

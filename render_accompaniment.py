@@ -16,8 +16,9 @@ from impromptica.utils import sound
 from impromptica.utils import tempo
 
 
-def render_accompaniment(input_filename, use_midi, use_key_chords,
-                         use_percussion):
+def render_accompaniment(
+        input_filename, echo_notes, echo_key_chords, use_percussion,
+        use_midi, verbose=False, visualize=False):
     input_file = audiolab.Sndfile(input_filename, 'r')
     audio_format = input_file.format
     sample_rate = input_file.samplerate
@@ -30,50 +31,53 @@ def render_accompaniment(input_filename, use_midi, use_key_chords,
 
     note_onsets, _, _ = onsets.get_onsets(samples, sample_rate)
     key_list = keys.get_keys(samples, note_onsets, sample_rate)
+    tatums, tactus, measures = tempo.get_meter(
+        samples, sample_rate, verbose=verbose, visualize=visualize)
 
     note_frequencies = note_freq.frequencies(note_onsets, samples, sample_rate)
 
-    # For each onset, match detected frequencies with square waves.
-    for onsetnum, onset in enumerate(sorted(note_frequencies)):
-        # Get the notes detected at this onset.
-        notes = note_frequencies[onset]
-        # Get the next onset.
-        if onsetnum == len(note_onsets) - 1:
-            next_onset = len(samples) - 1
-        else:
-            next_onset = note_onsets[onsetnum + 1]
-        # Print information about the notes detected at this onset.
-        note_strings = [sound.frequency_to_notestring(f) for f in notes]
-        print("\033[0;36mOnset %-6d\033[0;33m%s\033[0;0m" % (
-            onsetnum, ','.join(note_strings)))
-        if use_key_chords:
-            # Use the primary chord of the identified key rather than the
-            # identified notes.
-            upcoming_keys = [k for k in key_list if k[0] <= onset]
-            if upcoming_keys:
-                key = upcoming_keys[len(upcoming_keys) - 1][1]
-                notes = [sound.note_to_frequency(n) for n in
-                         keys.notes_in_key(key)]
-        # Play the notes.
-        for frequency in notes:
-            num_samples = next_onset - onset
-            time_elapsed = sound.samples_to_seconds(num_samples, sample_rate)
-            if use_midi:
-                # Use a trumpet sound by default.
-                merged_note = sound.gen_midi_note(time_elapsed, 0.5, frequency,
-                                                  sample_rate, 56)
+    if echo_notes:
+        # For each onset, match detected frequencies with square waves.
+        for onsetnum, onset in enumerate(sorted(note_frequencies)):
+            # Get the notes detected at this onset.
+            notes = note_frequencies[onset]
+            # Get the next onset.
+            if onsetnum == len(note_onsets) - 1:
+                next_onset = len(samples) - 1
             else:
-                merged_note = sound.generate_note(time_elapsed, 0.5, frequency,
-                                                  sample_rate)
-            merged_note = merged_note[:next_onset - onset]
-            sound.merge_audio(samples[onset: next_onset], merged_note)
+                next_onset = note_onsets[onsetnum + 1]
+            # Print information about the notes detected at this onset.
+            note_strings = [sound.frequency_to_notestring(f) for f in notes]
+            print("\033[0;36mOnset %-6d\033[0;33m%s\033[0;0m" % (
+                onsetnum, ','.join(note_strings)))
+            if echo_key_chords:
+                # Use the primary chord of the identified key rather than the
+                # identified notes.
+                upcoming_keys = [k for k in key_list if k[0] <= onset]
+                if upcoming_keys:
+                    key = upcoming_keys[len(upcoming_keys) - 1][1]
+                    notes = [sound.note_to_frequency(n) for n in
+                             keys.notes_in_key(key)]
+            # Play the notes.
+            for frequency in notes:
+                num_samples = next_onset - onset
+                time_elapsed = sound.samples_to_seconds(
+                    num_samples, sample_rate)
+                if use_midi:
+                    # Use a trumpet sound by default.
+                    merged_note = sound.gen_midi_note(
+                        time_elapsed, 0.5, frequency, sample_rate, 56)
+                else:
+                    merged_note = sound.generate_note(
+                        time_elapsed, 0.5, frequency, sample_rate)
+                merged_note = merged_note[:next_onset - onset]
+                sound.merge_audio(samples[onset: next_onset], merged_note)
 
     # Add percussion.
     if use_percussion:
         sounds = percussion.get_drumkit_samples()
-        beats_per_minute = tempo.map_pass(samples, sample_rate, 1, 400)
-        percussion.render_percussion(samples[note_onsets[0]:], sample_rate,
-                                     beats_per_minute, sounds)
+        percussion.render_percussion(samples, sample_rate,
+                                     tatums, tactus, measures, sounds)
 
     output_filename_parts = input_filename.split('.')
     # Remove the old file extension.
@@ -91,13 +95,25 @@ parser.add_argument('input_file', help=(
     'libsndfile. For a list of compatible formats, see '
     'http://www.mega-nerd.com/libsndfile/.'))
 
-parser.add_argument('--use_key_chords', help=(
-    'On onsets, play the primary chord of the identified key rather than the '
-    'identified notes.'), action='store_true')
-parser.add_argument('--use_midi', help=(
-    'Generate midi notes instead of square waves'), action='store_true')
-parser.add_argument('--use_percussion', help=(
-    'Generate percussion'), action='store_true')
+parser.add_argument(
+    '--echo-notes', help='On onsets, play the identified notes.',
+    action='store_true')
+parser.add_argument(
+    '--echo-key-chords', help=(
+    'On onsets, play the primary chord of the identified key.'),
+    action='store_true')
+parser.add_argument(
+    '--percussion', help='Generate percussion', action='store_true')
+parser.add_argument(
+    '--use_midi', help='Generate midi notes instead of square waves',
+    action='store_true')
+parser.add_argument(
+    '--verbose', help='Enable verbose output', action='store_true')
+parser.add_argument(
+    '--visualize', help='Enable all visualizations by default',
+    action='store_true')
+
 args = parser.parse_args()
-render_accompaniment(args.input_file, args.use_midi, args.use_key_chords,
-                     args.use_percussion)
+render_accompaniment(
+    args.input_file, args.echo_notes, args.echo_key_chords, args.percussion,
+    args.use_midi, args.verbose, args.visualize)
