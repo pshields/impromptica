@@ -39,7 +39,7 @@ _MAX_MULTIPLE_IN_SECONDS = 4.
 # We allow for tempo changes at intervals throughout the piece. The tempo is
 # assumed to be constant inside of each interval. Values on the order of one
 # second appear suitable.
-_CONSTANT_TEMPO_DURATION = 1.
+_CONSTANT_TEMPO_DURATION = 0.1
 # The beat placement algorithm assigns a penalty for placing a beat at a tempo
 # other than the target one. The penalty is a function of the square of the
 # logarithm of the change in tempo. `_BEAT_PLACEMENT_STRICTNESS` provides a
@@ -165,9 +165,9 @@ def get_segments(samples, sample_rate, segment_rate):
 def calculate_accentuation(
         segments, sample_rate, bank_size, band_size,
         log_compression_value, differential_weight):
-    """Returns musical accentuation signals that vary segment by segment.
+    """Returns a musical accentuation signal that varies segment by segment.
 
-    The accentuation signals are our best guess at the level of meaningful
+    The accentuation signal is our best guess at the level of meaningful
     musical accentuation in each of a few frequency ranges which form a
     partition of the usual human hearing range.
 
@@ -177,6 +177,7 @@ def calculate_accentuation(
       each segment.
     * We approximate the differential of spectral power in each band at each
       segment.
+    *
     """
     bin_size = get_bin_size(segments.shape[1])
     # Create a triangle band-pass filter bank for separating the power spectrum
@@ -202,11 +203,8 @@ def calculate_accentuation(
     differential = np.zeros((segments.shape[0], bank_size))
     # Precompute the denominator of the mu-law compression term.
     denominator = math.log(1 + log_compression_value)
-    # Allocate the storage for the accentuation bands.
-    accentuation = np.zeros((segments.shape[0], band_size))
-    # Calculate the number of filtered bands to aggregate into each
-    # accentuation band.
-    bands_per_accent = bank_size / band_size
+    # Allocate the storage for the accentuation.
+    accentuation = np.zeros(segments.shape[0])
     # Calculate the spectral change differential as previously described.
     for i in range(segments.shape[0]):
         for j in range(bank_size):
@@ -218,9 +216,9 @@ def calculate_accentuation(
                 (1. - differential_weight) * bands[i][j] +
                 differential_weight * max(0., bands[i][j] - bands[i - 1][j]))
             # Add this value to the corresponding accentuation band.
-            accentuation[i][j / bands_per_accent] += differential[i][j]
-        # Normalize the accentuation.
-        accentuation[i] /= bank_size
+            accentuation[i] += differential[i][j]
+    # Normalize the accentuation to have a standard deviation of one.
+    accentuation /= np.std(accentuation)
     return accentuation
 
 
@@ -228,15 +226,14 @@ def calculate_pulse_salience(
         accentuation, comb_filter_half_time, max_multiple):
     """Returns salience information on period hypotheses.
 
-    Period hypothesis are integers representing period length in segments. In
-    each accentuation band, we set up a comb filter for each possible period
-    hypothesis (up to `max_multiple`) and measure its energy over time.
+    Period hypothesis are integers representing period length in segments. We
+    set up a comb filter for each possible period hypothesis (up to
+    `max_multiple`) and measure its energy over time.
 
     `comb_filter_half_time` is the number of segments it takes for a comb
     filter's response to decay by one half.
     """
     segments_size = accentuation.shape[0]
-    band_size = accentuation.shape[1]
     # Precompute feedback gain coefficients for each period hypothesis. The
     # feedback gain coefficient is multiplied by the energy level of the
     # comb filter n segments ago (assuming n is the period hypothesis
@@ -257,26 +254,25 @@ def calculate_pulse_salience(
     # In each band, for each period hypothesis from one to `max_multiple`, set
     # up a comb filter. `filter_output` contains the response from the comb
     # filter indexed by segment, band, and period hypothesis minus one.
-    filter_output = np.zeros((segments_size, band_size, max_multiple))
-    filter_energy = np.zeros((segments_size, band_size, max_multiple))
+    filter_output = np.zeros((segments_size, max_multiple))
+    filter_energy = np.zeros((segments_size, max_multiple))
     # Allocate space for the accentuation energy signal.
-    accentuation_energy = np.zeros((segments_size, band_size))
-    pulse_salience = np.zeros((segments_size, band_size, max_multiple))
+    accentuation_energy = np.zeros(segments_size)
+    pulse_salience = np.zeros((segments_size, max_multiple))
     for i in range(segments_size):
-        for j in range(band_size):
-            # Calculate the accentuation energy at this segment.
-            accentuation_energy[i][j] = math.pow(accentuation[i][j], 2.)
-            if i > 0:
-                accentuation_energy[i][j] = (
-                    (1. - feedback_gain[0]) * accentuation_energy[i][j] +
-                    (feedback_gain[0] * accentuation_energy[i - 1][j]))
+        # Calculate the accentuation energy at this segment.
+        accentuation_energy[i] = math.pow(accentuation[i], 2.)
+        if i > 0:
+            accentuation_energy[i] = (
+                (1. - feedback_gain[0]) * accentuation_energy[i] +
+                (feedback_gain[0] * accentuation_energy[i - 1]))
             # Calculate the comb filter output and energy at this segment.
             for k in range(max_multiple):
-                filter_output[i][j][k] = (
-                    (1. - feedback_gain[k]) * accentuation[i][j])
+                filter_output[i][k] = (
+                    (1. - feedback_gain[k]) * accentuation[i])
                 if i - k > 0:
-                    filter_output[i][j][k] += (
-                        feedback_gain[k] * filter_output[i - k - 1][j][k])
+                    filter_output[i][k] += (
+                        feedback_gain[k] * filter_output[i - k - 1][k])
                 # Calculate the instantaneous energy of each comb filter at
                 # this segment. This equals the sum of the squared response of
                 # the comb filter at the most recent n segments (including the
@@ -286,23 +282,23 @@ def calculate_pulse_salience(
                 # the current segment, add that to the energy from the previous
                 # segment, and subtract the energy of the filter as of n
                 # segments ago.
-                filter_energy[i][j][k] = (
-                    math.pow(filter_output[i][j][k], 2.) / (k + 1.))
+                filter_energy[i][k] = (
+                    math.pow(filter_output[i][k], 2.) / (k + 1.))
                 if i > 0 and k > 0:
-                    filter_energy[i][j][k] += filter_energy[i - 1][j][k]
+                    filter_energy[i][k] += filter_energy[i - 1][k]
                     if i > k:
-                        filter_energy[i][j][k] -= math.pow(
-                            filter_output[i - k - 1][j][k], 2.) / (k + 1.)
+                        filter_energy[i][k] -= math.pow(
+                            filter_output[i - k - 1][k], 2.) / (k + 1.)
                 # Normalize the filter energy to derive the pulse salience for
-                # this segment and accentuation band.
-                if accentuation_energy[i][j] > 0.:
-                    pulse_salience[i][j][k] = (
-                        filter_energy[i][j][k] / accentuation_energy[i][j] -
+                # this segment.
+                if accentuation_energy[i] > 0.:
+                    pulse_salience[i][k] = (
+                        filter_energy[i][k] / accentuation_energy[i] -
                         filter_power[k]) / (1. - filter_power[k])
                 # Floor the pulse salience at zero so it looks better in plots.
-                if pulse_salience[i][j][k] < 0:
-                    pulse_salience[i][j][k] = 0.
-    return np.average(pulse_salience, axis=1)
+                if pulse_salience[i][k] < 0:
+                    pulse_salience[i][k] = 0.
+    return pulse_salience
 
 
 def calculate_periods(
@@ -420,8 +416,6 @@ def calculate_beats(periods, accentuation, beat_placement_strictness):
     # found found anywhere in the piece. If the optimal previous beat were
     # further back than that, we'd be doing something wrong.
     costs = np.zeros(np.max(periods) * 2)
-    # Average the four accentuation channels together.
-    accentuation = np.average(accentuation, axis=1)
     # Normalize the accentuation by its standard deviation so that envelopes of
     # different sizes will still balance well with the other cost term.
     accentuation /= np.std(accentuation)
