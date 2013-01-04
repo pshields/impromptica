@@ -6,9 +6,9 @@ Impromptu music accompaniment software
 Installation
 ------------
 
-On Ubuntu, install the following dependencies:
+On Ubuntu 12.10, install the following dependencies:
 
-    sudo apt-get install hydrogen libfftw3-dev libhdf5-serial-dev swig
+    sudo apt-get install hydrogen libfftw3-dev libfluidsynth-dev libhdf5-serial-dev libsndfile1-dev swig
 
 You may need to run
 
