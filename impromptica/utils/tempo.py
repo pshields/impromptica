@@ -15,16 +15,22 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
+import scipy
 
 from impromptica import probdata
 
 
 # Segments are the fundamental unit of time for our tempo calculations. Most of
 # the calculations work on an intermediate musical structure which is granular
-# only down to the segment level. Appropriate values for the segment rate
-# appear to be in the range of 50 to 100 Hz, but values as low as 20 Hz can be
-# used for faster computation at the cost of result quality.
-_SEGMENT_RATE = 20.
+# only down to the segment level. Accentuation is measured segment by segment.
+# Appropriate values for the initial accentuation rate appear to be in the
+# range of 50 to 100 Hz.
+_ACCENTUATION_RATE = 80.
+# The initial accentuation signal is interpolated to a new segment rate
+# appropriate for tempo induction. The appropriate rate appears to be in the
+# range of 100 to 200 Hz.
+_ACCENTUATION_INTERPOLATION_FACTOR = 2
+_SEGMENT_RATE = _ACCENTUATION_RATE * _ACCENTUATION_INTERPOLATION_FACTOR
 _TRIANGLE_FILTER_BANK_SIZE = 40
 _LOG_COMPRESSION_VALUE = 100.
 _ACCENT_BAND_SIZE = 4
@@ -163,8 +169,9 @@ def get_segments(samples, sample_rate, segment_rate):
 
 
 def calculate_accentuation(
-        segments, sample_rate, bank_size, band_size,
-        log_compression_value, differential_weight):
+        samples, sample_rate, accentuation_rate, interpolation_factor,
+        bank_size, band_size, log_compression_value, differential_weight,
+        verbose=False):
     """Returns a musical accentuation signal that varies segment by segment.
 
     The accentuation signal is our best guess at the level of meaningful
@@ -179,6 +186,11 @@ def calculate_accentuation(
       segment.
     *
     """
+    # Divide the samples into segments for calculations.
+    segments = get_segments(samples, sample_rate, accentuation_rate)
+    if verbose:
+        print("Original audio has been divided into %d segments." % (
+            segments.shape[0]))
     bin_size = get_bin_size(segments.shape[1])
     # Create a triangle band-pass filter bank for separating the power spectrum
     # of each segment into an array of feature bands.
@@ -204,7 +216,7 @@ def calculate_accentuation(
     # Precompute the denominator of the mu-law compression term.
     denominator = math.log(1 + log_compression_value)
     # Allocate the storage for the accentuation.
-    accentuation = np.zeros(segments.shape[0])
+    accentuation = np.zeros(segments.shape[0] * interpolation_factor)
     # Calculate the spectral change differential as previously described.
     for i in range(segments.shape[0]):
         for j in range(bank_size):
@@ -216,9 +228,18 @@ def calculate_accentuation(
                 (1. - differential_weight) * bands[i][j] +
                 differential_weight * max(0., bands[i][j] - bands[i - 1][j]))
             # Add this value to the corresponding accentuation band.
-            accentuation[i] += differential[i][j]
-    # Normalize the accentuation to have a standard deviation of one.
-    accentuation /= np.std(accentuation)
+            accentuation[i * interpolation_factor] += differential[i][j]
+    # Normalize the accentuation to have a maximum of one.
+    accentuation /= bank_size
+    # Interpolate the accentuation rate for finer detail for use in tempo
+    # induction. Use a sixth-order Butterworth low-pass filter with a cutoff of
+    # 10 Hz.
+    b, a = scipy.signal.butter(6, 10. / (accentuation_rate / 2.), btype='lowpass')
+    accentuation = scipy.signal.lfilter(b, a, accentuation)
+    accentuation *= interpolation_factor
+    for i in range(accentuation.shape[0]):
+        if accentuation[i] < 0:
+            accentuation[i] = 0
     return accentuation
 
 
@@ -331,7 +352,7 @@ def calculate_periods(
         best = np.argmax(scores[0]) + 1
         periods = np.ones(pulse_salience.shape[0], dtype=np.int) * best
         changes = [(0, best)]
-        print("Not enough data points to consider tempo changes."
+        print("Not enough data points to consider tempo changes. "
               "Assuming period of %d segments for entire piece." % (best))
         return (periods, scores, changes)
     # Allocate the dynamic programming table.
@@ -416,15 +437,12 @@ def calculate_beats(periods, accentuation, beat_placement_strictness):
     # found found anywhere in the piece. If the optimal previous beat were
     # further back than that, we'd be doing something wrong.
     costs = np.zeros(np.max(periods) * 2)
-    # Normalize the accentuation by its standard deviation so that envelopes of
-    # different sizes will still balance well with the other cost term.
-    accentuation /= np.std(accentuation)
     # Fill in the `beat_cost` and `previous_beat` tables. For each segment
     # within the first segment's target period, the cost of beat placement is
     # only a function of the accentuation at that segment. For all other
     # segments, we also account for how close the resulting tempo would be to
     # the target tempo if we placed a beat at that segment.
-    for i in range(periods[0]):
+    for i in range(min(accentuation.shape[0], periods[0])):
         beat_cost[i] = (1. - accentuation[i])
     for i in range(periods[0], periods.shape[0]):
         target_period = periods[i]
@@ -464,8 +482,10 @@ def calculate_beats(periods, accentuation, beat_placement_strictness):
 
 
 def get_meter(
-        samples, sample_rate, segment_rate=_SEGMENT_RATE,
-        bank_size=_TRIANGLE_FILTER_BANK_SIZE, band_size=_ACCENT_BAND_SIZE,
+        samples, sample_rate, accentuation_rate=_ACCENTUATION_RATE,
+        accentuation_interpolation_factor=_ACCENTUATION_INTERPOLATION_FACTOR,
+        segment_rate=_SEGMENT_RATE, bank_size=_TRIANGLE_FILTER_BANK_SIZE,
+        band_size=_ACCENT_BAND_SIZE,
         comb_filter_half_time=_COMB_FILTER_HALF_TIME,
         max_multiple_in_seconds=_MAX_MULTIPLE_IN_SECONDS,
         log_compression_value=_LOG_COMPRESSION_VALUE,
@@ -474,15 +494,10 @@ def get_meter(
         beat_placement_strictness=_BEAT_PLACEMENT_STRICTNESS,
         verbose=False, visualize=False):
     """Returns (tatums, tactus, measures) pulse indices."""
-    # Calculate the maximum multiple in segments.
-    max_multiple = int(max_multiple_in_seconds * segment_rate)
-    # Divide the samples into segments for calculations.
-    segments = get_segments(samples, sample_rate, segment_rate)
     if verbose:
         print("Beginning tempo recognition...")
-        print("Original audio has been divided into %d segments." % (
-            segments.shape[0]))
-
+    # Calculate the maximum multiple in segments.
+    max_multiple = int(max_multiple_in_seconds * segment_rate)
     # Define a function for converting segment indices to sample indices.
     def segment_to_sample(segment):
         """Convert the index of a segment into the index of a sample."""
@@ -491,11 +506,12 @@ def get_meter(
     if verbose:
         print("Calculating accentuation...")
     accentuation = calculate_accentuation(
-        segments, sample_rate, bank_size, band_size, log_compression_value,
-        differential_weight)
+        samples, sample_rate, accentuation_rate,
+        accentuation_interpolation_factor, bank_size, band_size,
+        log_compression_value, differential_weight, verbose)
     # Calculate the number of samples the comb filter half-time should be
     # from the number of seconds it has been specified to be.
-    comb_filter_half_time *= sample_rate / segments.shape[0]
+    comb_filter_half_time *= sample_rate / accentuation.shape[0]
     # Calculate the salience of various pulse period hypotheses at each
     # segment.
     if verbose:
@@ -553,10 +569,12 @@ def get_meter(
                   best_tatum_cost, best_tactus_cost, best_measure_cost))
         print("Found %d measures, %d tactus beats, %d tatums" % (
             len(measures), len(tactus), len(tatums)))
-        print("%f tactus beats per measure" % (
-            float(len(tactus)) / len(measures)))
-        print("%f tatums per tactus beat" % (
-            float(len(tatums)) / len(tactus)))
+        if len(measures) > 0:
+            print("%f tactus beats per measure" % (
+                float(len(tactus)) / len(measures)))
+        if len(tactus) > 0:
+            print("%f tatums per tactus beat" % (
+                float(len(tatums)) / len(tactus)))
     if visualize:
         fig = plt.figure(figsize=(9, 10))
 
@@ -592,7 +610,7 @@ def get_meter(
         plt.xticks(locs, [segment_to_seconds(i) for i in locs])
         locs, labels = plt.yticks()
         plt.yticks(locs, [period_to_seconds(i) for i in locs])
-        plt.axis([0, segments.shape[0] - 1, 0, max_multiple - 1])
+        plt.axis([0, accentuation.shape[0] - 1, 0, max_multiple - 1])
         plt.xlabel('Time (s)')
         plt.ylabel('Period hypothesis (s)')
         ax = fig.add_subplot(3, 1, 3)
