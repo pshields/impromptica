@@ -2,6 +2,7 @@
 git+git://github.com/johnglover/modal
 scipy
 scikits.audiolab
+scikits.samplerate
 h5py
 matplotlib
 pyFluidSynth
