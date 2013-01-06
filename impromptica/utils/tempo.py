@@ -18,6 +18,7 @@ import numpy as np
 import scipy
 
 from impromptica import probdata
+from impromptica import settings
 
 
 # Segments are the fundamental unit of time for our tempo calculations. Most of
@@ -633,7 +634,7 @@ def get_meter(
     return (tatums, tactus, measures)
 
 
-def map_pass(samples, frame_rate, low_bpm, high_bpm):
+def map_pass(samples, low_bpm, high_bpm, sample_rate=settings.SAMPLE_RATE):
     """
     Estimates the consistent BPM for an audio sample based on
     the peaks in amplitude and the best fit bpm between the range
@@ -655,16 +656,17 @@ def map_pass(samples, frame_rate, low_bpm, high_bpm):
         if abs(sample) < cut:
             filtered_samples[pos] = 0
 
-    return map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate)
+    return map_best_beat(filtered_samples, low_bpm, high_bpm,
+                         sample_rate=sample_rate)
 
-
-def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
+def map_best_beat(filtered_samples, low_bpm, high_bpm,
+                  sample_rate=settings.SAMPLE_RATE):
     # Try to map every bpm in the range, and see which one best fits
     best_bpm = 0
     most_hits = 0
 
     for bpm in range(low_bpm, high_bpm + 1):
-        sample_rate_step = frame_rate * 60.0 / bpm
+        sample_rate_step = sample_rate * 60.0 / bpm
         cur_sample = sample_rate_step
         hits = 0.0
         while cur_sample < len(filtered_samples):
@@ -679,7 +681,7 @@ def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
     # Check to make sure half or double the tempo isn't correct
     best_ratio = 0.0
 
-    sample_rate_step = frame_rate * 60.0 / best_bpm
+    sample_rate_step = sample_rate * 60.0 / best_bpm
     sample_steps = [sample_rate_step, sample_rate_step / 2,
                     sample_rate_step * 2]
 
@@ -695,6 +697,6 @@ def map_best_beat(filtered_samples, low_bpm, high_bpm, frame_rate):
 
         if hits / steps > best_ratio:
             best_ratio = hits / steps
-            best_bpm = (frame_rate * 60) / sample_step
+            best_bpm = (sample_rate * 60) / sample_step
 
     return best_bpm

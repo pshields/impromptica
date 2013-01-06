@@ -8,13 +8,14 @@ Installation
 
 On Ubuntu 12.10, install the following dependencies:
 
-    sudo apt-get install hydrogen libfftw3-dev libfluidsynth-dev libhdf5-serial-dev libsndfile1-dev swig
+    sudo apt-get install hydrogen libfftw3-dev libfluidsynth-dev libhdf5-serial-dev libsamplerate0-dev libsndfile1-dev swig
 
 You may need to run
 
     sudo ln -s /usr/lib/i386-linux-gnu/libsndfile.so.1 /usr/local/lib/libsndfile.so
+    sudo ln -s /usr/lib/i386-linux-gnu/libsamplerate.so.1 /usr/local/lib/libsamplerate.so
 
-prior to installing scikits.audiolab via pip.
+prior to installing `scikits.audiolab` and `scikits.samplerate` via pip.
 
 Features
 --------

@@ -5,10 +5,11 @@ from pylab import arange, diff, find, plot, show, subplot, title
 from numpy import argmax
 import numpy
 
+from impromptica import settings
 from impromptica.utils.sound import note_to_frequency, frequency_to_note
 
 
-def frequencies(onsets, samples, Fs=44100):
+def frequencies(onsets, samples, sample_rate=settings.SAMPLE_RATE):
     """Returns a dict of lists of frequencies of onsets.
 
     Given note onset positions and a numpy array of samples (amplitudes), this
@@ -72,7 +73,7 @@ def frequencies(onsets, samples, Fs=44100):
         actual_peak = 1 / 2.0 * (func[peak - 1] - func[peak + 1]) /\
             (func[peak - 1] - 2 * func[peak] + func[peak + 1]) + peak
 
-        guess_fundamental_freq = Fs * actual_peak / N
+        guess_fundamental_freq = sample_rate * actual_peak / N
 
         # Slight misnomer.
         # Contains a list of frequencies associated with this note onset
@@ -100,18 +101,20 @@ def equal_temperament_note(freq):
     return note_to_frequency(frequency_to_note(freq))
 
 
-def plot_note_frequencies(onset, samples, Fs, window, graph_title=""):
+def plot_note_frequencies(
+        onset, samples, window, sample_rate=settings.SAMPLE_RATE,
+        graph_title=""):
     """
     Visualize the frequency spectogram. Used for testing.
     """
-    freq_dist = Fs / window
+    freq_dist = sample_rate / window
 
     note_samples = samples[onset: onset + window]
     x = fft(note_samples) / window
 
     # Can only use half the fft values. See above comment
     x = x[:len(x) / 2]
-    t = arange(0.0, Fs / 2 - freq_dist, freq_dist)
+    t = arange(0.0, sample_rate / 2 - freq_dist, freq_dist)
 
     # Crop t to x in case it's the last note, and it's short
     t = t[:len(x)]

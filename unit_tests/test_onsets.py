@@ -23,7 +23,7 @@ class TestOnsets(unittest.TestCase):
         for f in self.quick_notes_frequencies:
             note_samples = sound.generate_note(self.quick_note_length, 0.8, f)
             samples = numpy.append(samples, note_samples)
-        onset_list = onsets.get_onsets(samples, 44100)[0]
+        onset_list = onsets.get_onsets(samples)[0]
         assert len(onset_list) == len(self.quick_notes_frequencies), (
             "Detected only %d out of %d onsets" % (
-                len(onset_list), len(self.quick_notes_frequences)))
+                len(onset_list), len(self.quick_notes_frequencies)))
