@@ -1,5 +1,11 @@
 """Impromptica configuration and settings."""
 
+# `SAMPLE_RATE` is the sample rate that all input audio will be coerced to. By
+# default we set it to 48 KHz, which is the recommended practice by the Audio
+# Engineering Society for audio programs (AES5-2008). Impromptica expects this
+# value to having a floating-point data type.
+SAMPLE_RATE = 48000.
+
 # `DRUMKIT_DIR` is the directory that contains a Hydrogen drumkit to use.
 DRUMKIT_DIR = '/usr/share/hydrogen/data/drumkits/GMkit'
 

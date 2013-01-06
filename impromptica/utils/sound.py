@@ -1,15 +1,17 @@
-#!/usr/bin/env python
-import time
-import numpy
-import fluidsynth
-import math
+"""Utilities for working with audio samples."""
 import os
-from scikits.audiolab import Format
-from scikits.audiolab import Sndfile
-from scipy import hamming
+import math
+import time
 
-# Sampling rate in Hz
-_sample_rate = 44100
+import fluidsynth
+import numpy
+from scikits import audiolab
+from scikits import samplerate
+import scipy
+
+from impromptica import settings
+
+
 # Default to mono sound
 _num_channels = 1
 # In Hz, used for Equal Temperament
@@ -27,6 +29,29 @@ NOTES = {
     "A":    9,
     "B":    11,
 }
+
+
+def get_samples(filename):
+    """Returns samples from the given input audio file.
+
+    Input audio consisting of multiple channels is condensed into a single
+    channel.
+
+    The sample rate of the returned samples is defined by the `SAMPLE_RATE`
+    variable in Impromptica's settings module.
+    """
+    input_file = audiolab.SndFile(filename, 'r')
+    sample_rate = input_file.samplerate
+    samples = input_file.read_frames(input_file.nframes)
+
+    # Condense multiple tracks to a single track.
+    if samples.ndim > 1:
+        samples = samples.average(axis=1)
+
+    # Resample the input audio to the target frequency.
+    result = samplerate.resample(samples, settings.SAMPLE_RATE / sample_rate,
+                                 'sinc_best')
+    return result
 
 
 def notestring_to_note(note, octave=_MIDDLE_OCTAVE):
@@ -72,7 +97,7 @@ def notestring_to_frequency(note, octave=_MIDDLE_OCTAVE):
 
 
 def frequency_to_note(frequency):
-    """Returns the closest note value of the given frequency (in Hz.)"""
+    """Returns the closest note value of the given frequency (in hertz.)"""
     return (int(round(12.0 * math.log(frequency / _MIDDLE_C) / math.log(2))) +
             _MIDDLE_C_SEMITONE)
 
@@ -107,46 +132,41 @@ def frequency_to_notestring(frequency):
     return note_to_notestring(frequency_to_note(frequency))
 
 
-def generate_note(duration, amplitude, frequency, Fs=44100):
+def generate_note(duration, amplitude, frequency,
+                  sample_rate=settings.SAMPLE_RATE):
     """
-    Returns a numpy array of samples.
-    Duration: Time in seconds of clip
-    Amplitude: Volume of the note, between 0 and 1
-    Frequency: In Hz
-    Fs: Sampling Rate. Defaults to 44100
+    Returns a numpy array of samples representing the given note being played
+    for the given duration. The note is played as a square wave dampened by a
+    Hamming window.
+
+    duration: Time in seconds of clip
+    amplitude: Volume of the note, between 0 and 1
+    frequency: Frequency of the tone, in hertz
+    sample_rate: Sample rate of the output, in hertz
     """
-    samples = []
+    result = numpy.zeros(int(duration * sample_rate))
+    dampening = scipy.hamming(result.shape[0])
+    period = sample_rate / frequency
 
-    if not Fs:
-        Fs = _sample_rate
-
-    if frequency == 0:
-        return numpy.zeros(int(duration * Fs))
-
-    num_samples = seconds_to_samples(duration)
-
-    dampening = hamming(num_samples)
-    period = Fs / frequency
-
-    #Generate a dampened square wave
-    for sample in range(num_samples):
-        if sample % period < period / 2:
-            samples.append(amplitude)
+    for i in range(result.shape[0]):
+        if i % period < period / 2:
+            result[i] = amplitude
         else:
-            samples.append(-amplitude)
+            result[i] = -amplitude
 
-    note = samples * dampening
+    result *= dampening
 
-    return note
+    return result
 
 
-def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
-    """
-    Generate a midi note.
-    Duration: Time in seconds of clip
-    Amplitude: Volume of the note, between 0 and 1
-    Frequency: In Hz
-    Fs: Sampling Rate. Defaults to 44100
+def gen_midi_note(duration, amplitude, frequency,
+                  sample_rate=settings.SAMPLE_RATE, instrument=0):
+    """Generate a midi note.
+
+    duration: Time in seconds of clip
+    amplitude: Volume of the note, between 0 and 1
+    frequency: frequency of the note, in hertz
+    sample_rate: Sample Rate of the output, in hertz
     Instrument: 0-127 General Midi number
         Default to Acoustic Grand Piano
         http://en.wikipedia.org/wiki/General_MIDI
@@ -162,7 +182,7 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
     #Generate at medium amplitude to avoid artifacts
     #Generate at medium amplitude to avoid artifacts
     fs.noteon(0, notenum, int(amplitude * 50))
-    note = fs.get_samples(seconds_to_samples(duration, Fs))
+    note = fs.get_samples(seconds_to_samples(duration, sample_rate))
     fs.noteoff(0, notenum)
 
     time.sleep(0.1)
@@ -178,7 +198,7 @@ def gen_midi_note(duration, amplitude, frequency, Fs=44100, instrument=0):
     #Audiolab compliancy, amplitude adjustment
     mono_note /= numpy.max(mono_note)
     mono_note *= amplitude
-    dampening = hamming(len(mono_note))
+    dampening = scipy.hamming(len(mono_note))
     mono_note *= dampening
 
     return mono_note
@@ -210,49 +230,44 @@ def merge_audio(to_samples, merge_samples):
         to_samples /= max_amplitude
 
 
-def generate_chord(duration, amplitude, frequencies, Fs=44100):
+def generate_chord(duration, amplitude, frequencies,
+                   sample_rate=settings.SAMPLE_RATE):
     """
-    Duration: Time in seconds of clip
-    Amplitude: Volume of the note, between 0 and 1
-    Frequencies: List of frequencies in Hz
-    Fs: Sampling rate. Defaults to 44100
+    duration: Time in seconds of clip
+    amplitude: Volume of the note, between 0 and 1
+    frequencies: List of frequencies, in hertz
+    sample_rate: Sample rate of the output, in hertz
     """
     samples = numpy.zeros(seconds_to_samples(duration))
 
     for frequency in frequencies:
-        frequency_samples = generate_note(duration, amplitude, frequency, Fs)
+        frequency_samples = generate_note(duration, amplitude, frequency,
+                                          sample_rate)
         merge_audio(samples, frequency_samples)
 
     return samples
 
 
-def seconds_to_samples(duration, Fs=44100):
-    """
-    Converts a duration in seconds to the corresponding number of samples.
-    Defaults to a sampling frequency of 44100 Hz
-    """
-    return int(Fs * duration)
+def seconds_to_samples(duration, sample_rate=settings.SAMPLE_RATE):
+    """Returns the number of samples of the given duration."""
+    return int(sample_rate * duration)
 
 
-def samples_to_seconds(samples, Fs=44100):
-    """
-    Converts a duration in samples to the corresponding number of seconds.
-    Defaults to a sampling frequency of 44100 Hz
-    """
-    return float(samples) / Fs
+def samples_to_seconds(samples, sample_rate=settings.SAMPLE_RATE):
+    """Returns the duration of the given number of samples in seconds."""
+    return float(samples) / sample_rate
 
 
-def write_wav(samples, filename, audio_format=Format(), Fs=44100,
-              stereo=False):
+def write_wav(samples, filename, audio_format=audiolab.Format(),
+              sample_rate=settings.SAMPLE_RATE, stereo=False):
     """
     Write the numpy samples to a wav file.
     Audio format expects an Sndfile.format object.
-    One channel (mono) is default, 44100 Hz sampling frequency is default.
+    One channel (mono) is default.
     """
     channels = 1
     if stereo:
         channels = 2
-
-    f = Sndfile(filename, 'w', audio_format, channels, Fs)
+    f = audiolab.Sndfile(filename, 'w', audio_format, channels, sample_rate)
     f.write_frames(samples)
     f.close()

@@ -8,6 +8,7 @@ import argparse
 
 from scikits import audiolab
 
+from impromptica import settings
 from impromptica.utils import keys
 from impromptica.utils import onsets
 from impromptica.utils import percussion
@@ -19,23 +20,12 @@ from impromptica.utils import tempo
 def render_accompaniment(
         input_filename, echo_notes, echo_key_chords, use_percussion,
         use_midi, verbose=False, visualize=False):
-    input_file = audiolab.Sndfile(input_filename, 'r')
-    audio_format = input_file.format
-    sample_rate = input_file.samplerate
-    samples = input_file.read_frames(input_file.nframes)
-
-    # If the input audio file has multiple tracks (e.g. stereo input), combine
-    # them into a single track.
-    if samples.ndim > 1:
-        samples = samples.sum(axis=1)
-
-    note_onsets, _, _ = onsets.get_onsets(samples, sample_rate)
-    key_list = keys.get_keys(samples, note_onsets, sample_rate)
+    samples = sound.get_samples(input_filename)
+    note_onsets, _, _ = onsets.get_onsets(samples)
+    key_list = keys.get_keys(samples, note_onsets)
     tatums, tactus, measures = tempo.get_meter(
-        samples, sample_rate, verbose=verbose, visualize=visualize)
-
-    note_frequencies = note_freq.frequencies(note_onsets, samples, sample_rate)
-
+        samples, verbose=verbose, visualize=visualize)
+    note_frequencies = note_freq.frequencies(note_onsets, samples)
     if echo_notes:
         # For each onset, match detected frequencies with square waves.
         for onsetnum, onset in enumerate(sorted(note_frequencies)):
@@ -62,30 +52,27 @@ def render_accompaniment(
             for frequency in notes:
                 num_samples = next_onset - onset
                 time_elapsed = sound.samples_to_seconds(
-                    num_samples, sample_rate)
+                    num_samples)
                 if use_midi:
                     # Use a trumpet sound by default.
                     merged_note = sound.gen_midi_note(
-                        time_elapsed, 0.5, frequency, sample_rate, 56)
+                        time_elapsed, 0.5, frequency, intrument=56)
                 else:
                     merged_note = sound.generate_note(
-                        time_elapsed, 0.5, frequency, sample_rate)
+                        time_elapsed, 0.5, frequency)
                 merged_note = merged_note[:next_onset - onset]
                 sound.merge_audio(samples[onset: next_onset], merged_note)
-
     # Add percussion.
     if use_percussion:
         sounds = percussion.get_drumkit_samples()
-        percussion.render_percussion(samples, sample_rate,
-                                     tatums, tactus, measures, sounds)
-
+        percussion.render_percussion(samples, tatums, tactus, measures, sounds)
     output_filename_parts = input_filename.split('.')
     # Remove the old file extension.
     output_filename_parts.pop()
     # Construct the output file name.
     output_filename = '%s_accompanied.wav' % ('.'.join(output_filename_parts))
-    output_file = audiolab.Sndfile(output_filename, 'w', audio_format, 1,
-                                   sample_rate)
+    output_file = audiolab.Sndfile(output_filename, 'w', audiolab.Format(), 1,
+                                   settings.SAMPLE_RATE)
     output_file.write_frames(samples)
     output_file.close()
 
