@@ -40,7 +40,7 @@ def get_samples(filename):
     The sample rate of the returned samples is defined by the `SAMPLE_RATE`
     variable in Impromptica's settings module.
     """
-    input_file = audiolab.SndFile(filename, 'r')
+    input_file = audiolab.Sndfile(filename, 'r')
     sample_rate = input_file.samplerate
     samples = input_file.read_frames(input_file.nframes)
 

@@ -15,27 +15,12 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
-import scipy
 
 from impromptica import probdata
 from impromptica import settings
+from impromptica.utils import novelty
 
 
-# Segments are the fundamental unit of time for our tempo calculations. Most of
-# the calculations work on an intermediate musical structure which is granular
-# only down to the segment level. Accentuation is measured segment by segment.
-# Appropriate values for the initial accentuation rate appear to be in the
-# range of 50 to 100 Hz.
-_ACCENTUATION_RATE = 80.
-# The initial accentuation signal is interpolated to a new segment rate
-# appropriate for tempo induction. The appropriate rate appears to be in the
-# range of 100 to 200 Hz.
-_ACCENTUATION_INTERPOLATION_FACTOR = 2
-_SEGMENT_RATE = _ACCENTUATION_RATE * _ACCENTUATION_INTERPOLATION_FACTOR
-_TRIANGLE_FILTER_BANK_SIZE = 40
-_LOG_COMPRESSION_VALUE = 100.
-_ACCENT_BAND_SIZE = 4
-_DIFFERENTIAL_WEIGHT = 0.9
 _COMB_FILTER_HALF_TIME = 4.  # in seconds
 # Each comb filter represents a hypothesis about the period of the piece. We
 # consider possible periods as integer multiples of the length of one segment,
@@ -54,194 +39,6 @@ _CONSTANT_TEMPO_DURATION = 0.1
 # which has a low level of musical accentuation.
 # found to work well.
 _BEAT_PLACEMENT_STRICTNESS = 1000.
-
-
-def get_bin_size(sample_size):
-    """Returns the number of bins resulting from applying a DFT to
-    `sample_size` samples.
-
-    The number of bins is (samples_per_segment / 2) + 1 because we only want to
-    retain the bins with non-negative frequencies.
-    """
-    return sample_size / 2 + 1
-
-
-def get_bin_frequencies(sample_size, sample_rate):
-    """Returns an array of bin frequencies after application of FFT.
-
-    This function assumes negative-frequency bins were filtered out.
-    """
-    result = np.fft.fftfreq(sample_size, d=1. / sample_rate)
-    # Crop result to the appropriate size.
-    return result[:get_bin_size(sample_size)]
-
-
-def power_spectrum(samples, sample_rate):
-    """Returns the power spectrum of the given samples.
-
-    This function returns an array of frequency bins and associated power
-    levels for each bin.
-
-    The power is equal to the square of the absolute value of each non-negative
-    frequency bin returned from applying a DFT to the input samples.
-
-    The resulting power spectrum has (samples.size/2 + 1) bins.
-    """
-    bins = np.fft.rfft(samples)
-    # Multiplying a complex number by its conjugate yields the same result as
-    # squaring its absolute value.
-    return np.real(bins * np.conjugate(bins))
-
-
-def mel(frequency):
-    """Returns the mel scale version of the given frequency."""
-    result = 0.
-    if frequency > 0:
-        result = 2595. * math.log10(1. + frequency / 700.)
-    return result
-
-
-def inverse_mel(mel_frequency):
-    """Returns the regular version of the given mel scale frequency."""
-    return 700. * (math.pow(10., mel_frequency / 2595.) - 1.)
-
-
-def create_triangle_filter_bank(bank_size, sample_size, sample_rate):
-    """Returns a bank of triangle filters.
-
-    The filters are spaced uniformly on the mel frequency scale in the range of
-    human hearing so that they can provide the greatest coverage of features
-    from the perspective of human hearing.
-
-    Each triangle is normalized to have equal area so that analyses across
-    bands compare accurately.
-    """
-    # Generate a uniform range of mel scale frequencies in the range of human
-    # hearing (approximately 50 to 20,000 Hz.) We will try to center a triangle
-    # filter as close to each interior frequency as possible.
-    low_frequency, high_frequency = (mel(50.), mel(20000.))
-    centers = np.linspace(low_frequency, high_frequency, bank_size + 2)
-    # `bin_indices` maps filter indices to DFT bin indices.
-    bin_indices = np.zeros(bank_size + 2, dtype=int)
-    bin_frequencies = get_bin_frequencies(sample_size, sample_rate)
-    bin_mel_frequencies = [mel(f) for f in bin_frequencies]
-    current_bin_index = 0
-    for i in range(bank_size + 2):
-        # While the target center frequency for this filter is closer to the
-        # mel frequency of the current fourier bin index, increment the index.
-        while (abs(centers[i] - bin_mel_frequencies[current_bin_index]) >
-               abs(centers[i] - bin_mel_frequencies[current_bin_index + 1])):
-            current_bin_index += 1
-        bin_indices[i] = current_bin_index
-        current_bin_index += 1
-    # Create the filters.
-    result = np.zeros((bank_size, get_bin_size(sample_size)))
-    for i in range(1, bank_size + 1):
-        low_index, middle_index, high_index = bin_indices[i - 1:i + 2]
-        # Normalize the height of this triangle filter to make it have unit
-        # area.
-        height = 2. / float(high_index - low_index)
-        result[i - 1][low_index:middle_index] = np.linspace(
-            0., height, middle_index - low_index)
-        result[i - 1][middle_index:high_index + 1] = np.linspace(
-            height, 0., high_index - middle_index + 1)
-    return result
-
-
-def get_segments(samples, sample_rate, segment_rate):
-    """Divides the samples into Hanning-windowed segments with 50% overlap.
-
-    Segments will be centered `segment_period` seconds apart.
-
-    Up to `segment_period` seconds worth of samples might be clipped off the
-    end of the samples, but this shouldn't matter much since the segments are
-    so small.
-    """
-    samples_per_segment = int(sample_rate / segment_rate) * 2
-    number_of_segments = int(samples.shape[0] / sample_rate * segment_rate) - 1
-    window = np.hanning(samples_per_segment)
-    # Place the samples into each segment.
-    result = np.zeros((number_of_segments, samples_per_segment))
-    for i in range(number_of_segments):
-        start = i * (samples_per_segment / 2)
-        end = start + samples_per_segment
-        result[i] = samples[start:end] * window
-    return result
-
-
-def calculate_accentuation(
-        samples, sample_rate, accentuation_rate, interpolation_factor,
-        bank_size, band_size, log_compression_value, differential_weight,
-        verbose=False):
-    """Returns a musical accentuation signal that varies segment by segment.
-
-    The accentuation signal is our best guess at the level of meaningful
-    musical accentuation in each of a few frequency ranges which form a
-    partition of the usual human hearing range.
-
-    The steps taken to calculate the differential are as follows:
-
-    * We calculate the spectral power in each of several frequency bands at
-      each segment.
-    * We approximate the differential of spectral power in each band at each
-      segment.
-    *
-    """
-    # Divide the samples into segments for calculations.
-    segments = get_segments(samples, sample_rate, accentuation_rate)
-    if verbose:
-        print("Original audio has been divided into %d segments." % (
-            segments.shape[0]))
-    bin_size = get_bin_size(segments.shape[1])
-    # Create a triangle band-pass filter bank for separating the power spectrum
-    # of each segment into an array of feature bands.
-    filters = create_triangle_filter_bank(
-        bank_size, segments.shape[1], sample_rate)
-    # Calculate the DFT power spectrum of each segment. Then, at each segment,
-    # apply the power spectrum to a triangle band-pass filter bank and
-    # calculate the power in each band.
-    powers = np.zeros((segments.shape[0], bin_size))
-    bands = np.zeros((segments.shape[0], bank_size))
-    for i, segment in enumerate(segments):
-        powers[i] = power_spectrum(segment, sample_rate)
-    # To measure spectral change, we would like to calculate the change in
-    # spectral power from the previous segment to the current and normalize it
-    # by dividing it by the power level at the current segment. This can be
-    # viewed as taking the unnormalized differential of the logarithm of the
-    # spectral power at each segment. We implement mu-law compression on top
-    # of this to further accentuate variations in power when the power is
-    # already small. We increase any negative differential up to zero. Finally,
-    # we perform a weighted average of the logarithm of the spectral power with
-    # its differential, which has been found to improve accuracy.
-    differential = np.zeros((segments.shape[0], bank_size))
-    # Precompute the denominator of the mu-law compression term.
-    denominator = math.log(1 + log_compression_value)
-    # Allocate the storage for the accentuation.
-    accentuation = np.zeros(segments.shape[0] * interpolation_factor)
-    # Calculate the spectral change differential as previously described.
-    for i in range(segments.shape[0]):
-        for j in range(bank_size):
-            bands[i][j] = math.log(
-                1. + log_compression_value *
-                np.sum(powers[i] * filters[j])) / denominator
-            # Calculate the weighted differential.
-            differential[i][j] = (
-                (1. - differential_weight) * bands[i][j] +
-                differential_weight * max(0., bands[i][j] - bands[i - 1][j]))
-            # Add this value to the corresponding accentuation band.
-            accentuation[i * interpolation_factor] += differential[i][j]
-    # Normalize the accentuation to have a maximum of one.
-    accentuation /= bank_size
-    # Interpolate the accentuation rate for finer detail for use in tempo
-    # induction. Use a sixth-order Butterworth low-pass filter with a cutoff of
-    # 10 Hz.
-    b, a = scipy.signal.butter(6, 10. / (accentuation_rate / 2.), btype='lowpass')
-    accentuation = scipy.signal.lfilter(b, a, accentuation)
-    accentuation *= interpolation_factor
-    for i in range(accentuation.shape[0]):
-        if accentuation[i] < 0:
-            accentuation[i] = 0
-    return accentuation
 
 
 def calculate_pulse_salience(
@@ -483,55 +280,46 @@ def calculate_beats(periods, accentuation, beat_placement_strictness):
 
 
 def get_meter(
-        samples, sample_rate, accentuation_rate=_ACCENTUATION_RATE,
-        accentuation_interpolation_factor=_ACCENTUATION_INTERPOLATION_FACTOR,
-        segment_rate=_SEGMENT_RATE, bank_size=_TRIANGLE_FILTER_BANK_SIZE,
-        band_size=_ACCENT_BAND_SIZE,
+        samples, hop_size=settings.NOVELTY_HOP_SIZE,
+        window_size=settings.NOVELTY_WINDOW_SIZE,
+        interpolation_factor=settings.NOVELTY_INTERPOLATION_FACTOR,
         comb_filter_half_time=_COMB_FILTER_HALF_TIME,
         max_multiple_in_seconds=_MAX_MULTIPLE_IN_SECONDS,
-        log_compression_value=_LOG_COMPRESSION_VALUE,
-        differential_weight=_DIFFERENTIAL_WEIGHT,
         constant_tempo_duration=_CONSTANT_TEMPO_DURATION,
         beat_placement_strictness=_BEAT_PLACEMENT_STRICTNESS,
+        sample_rate=settings.SAMPLE_RATE,
         verbose=False, visualize=False):
     """Returns (tatums, tactus, measures) pulse indices."""
     if verbose:
         print("Beginning tempo recognition...")
     # Calculate the maximum multiple in segments.
-    max_multiple = int(max_multiple_in_seconds * segment_rate)
-    # Define a function for converting segment indices to sample indices.
-    def segment_to_sample(segment):
-        """Convert the index of a segment into the index of a sample."""
-        return  int((segment + 0.5) * (sample_rate / segment_rate))
+    max_multiple = int(max_multiple_in_seconds * sample_rate / hop_size)
     # Calculate the accentuation of a various frequency bands across segments.
     if verbose:
         print("Calculating accentuation...")
-    accentuation = calculate_accentuation(
-        samples, sample_rate, accentuation_rate,
-        accentuation_interpolation_factor, bank_size, band_size,
-        log_compression_value, differential_weight, verbose)
+    novelty_signal = novelty.calculate_novelty(samples, verbose)
     # Calculate the number of samples the comb filter half-time should be
     # from the number of seconds it has been specified to be.
-    comb_filter_half_time *= sample_rate / accentuation.shape[0]
+    comb_filter_half_time *= sample_rate / novelty_signal.shape[0]
     # Calculate the salience of various pulse period hypotheses at each
     # segment.
     if verbose:
         print("Calculating pulse salience...")
     pulse_salience = calculate_pulse_salience(
-        accentuation, comb_filter_half_time, max_multiple)
+        novelty_signal, comb_filter_half_time, max_multiple)
     if verbose:
         print("Searching for best meter...")
     # Calculate prior probability distributions for the metrical levels. Right
     # now these are all offset by one (e.g. the prior probability of n periods
     # is located at index n - 1 in each of the following lists.)
     ptatum = probdata.build_tempo_profile_data(
-        0.39, 0.18, 1. / segment_rate, max_multiple)
+        0.39, 0.18, hop_size / sample_rate, max_multiple)
     ptactus = probdata.build_tempo_profile_data(
-        0.28, 0.55, 1. / segment_rate, max_multiple)
+        0.28, 0.55, hop_size / sample_rate, max_multiple)
     pmeasure = probdata.build_tempo_profile_data(
-        0.26, 2.1, 1. / segment_rate, max_multiple)
+        0.26, 2.1, hop_size / sample_rate, max_multiple)
     segments_per_tempo_change = max(
-        1, int(constant_tempo_duration / segment_rate))
+        1, int(constant_tempo_duration / (hop_size / sample_rate)))
     # Precompute the transition probabilities for all possible transitions
     # between hypotheses.
     ptransition = probdata.build_tempo_change_profile_data(max_multiple)
@@ -550,14 +338,14 @@ def get_meter(
         print("Measure changes: %s" % (str(measure_changes)))
         print("Finding beats...")
     tactus, best_tactus_cost = calculate_beats(
-        tactus_periods, accentuation, beat_placement_strictness)
-    tactus = [segment_to_sample(i) for i in tactus]
+        tactus_periods, novelty_signal, beat_placement_strictness)
+    tactus = [i * hop_size / interpolation_factor + window_size / 2 for i in tactus]
     tatums, best_tatum_cost = calculate_beats(
-        tatum_periods, accentuation, beat_placement_strictness)
-    tatums = [segment_to_sample(i) for i in tatums]
+        tatum_periods, novelty_signal, beat_placement_strictness)
+    tatums = [i * hop_size / interpolation_factor + window_size / 2 for i in tatums]
     measures, best_measure_cost = calculate_beats(
-        measure_periods, accentuation, beat_placement_strictness)
-    measures = [segment_to_sample(i) for i in measures]
+        measure_periods, novelty_signal, beat_placement_strictness)
+    measures = [i * hop_size / interpolation_factor + window_size / 2 for i in measures]
     if verbose:
         medians = [np.median(x, axis=0) for x in (
             measure_periods, tactus_periods, tatum_periods)]
@@ -578,13 +366,6 @@ def get_meter(
                 float(len(tatums)) / len(tactus)))
     if visualize:
         fig = plt.figure(figsize=(9, 10))
-
-        # Calculate second values for each segment
-        def segment_to_seconds(segment):
-            return segment_to_sample(segment) / float(sample_rate)
-
-        def period_to_seconds(period):
-            return float(period) / segment_rate
         # Plot the original waveform and the accentuation levels.
         ax = fig.add_subplot(3, 1, 1)
         # Set the axes.
@@ -592,8 +373,9 @@ def get_meter(
         # Show the input audio waveform.
         plt.plot(samples, alpha=0.2, color='b')
         # Plot the musical accentuation signals.
-        plt.plot([segment_to_sample(i) for i in range(accentuation.shape[0])],
-                 accentuation)
+        plt.plot([i * hop_size / interpolation_factor + window_size / 2
+                  for i in range(novelty_signal.shape[0])],
+                 novelty_signal)
         # Add the locations of the identified tatums, tactus, and measures.
         for x in measures:
             plt.axvline(x, color='g', alpha=0.5)
@@ -608,10 +390,11 @@ def get_meter(
                   cmap=cm.binary)
         ax.set_aspect('auto')
         locs, labels = plt.xticks()
-        plt.xticks(locs, [segment_to_seconds(i) for i in locs])
+        plt.xticks(locs, [(i * hop_size / interpolation_factor + window_size / 2) / sample_rate
+                          for i in locs])
         locs, labels = plt.yticks()
-        plt.yticks(locs, [period_to_seconds(i) for i in locs])
-        plt.axis([0, accentuation.shape[0] - 1, 0, max_multiple - 1])
+        plt.yticks(locs, [(i * hop_size / interpolation_factor) / sample_rate for i in locs])
+        plt.axis([0, novelty_signal.shape[0] - 1, 0, max_multiple - 1])
         plt.xlabel('Time (s)')
         plt.ylabel('Period hypothesis (s)')
         ax = fig.add_subplot(3, 1, 3)
@@ -622,9 +405,9 @@ def get_meter(
         locs, labels = plt.xticks()
         plt.xticks(locs, [(
             (max_multiple * 3 + segments_per_tempo_change * i) /
-            segment_rate) for i in locs])
+            (sample_rate / hop_size / interpolation_factor)) for i in locs])
         locs, labels = plt.yticks()
-        plt.yticks(locs, [period_to_seconds(i) for i in locs])
+        plt.yticks(locs, [(i * hop_size * interpolation_factor) / sample_rate for i in locs])
         plt.axis([0 - (max_multiple * 3) / segments_per_tempo_change,
                  pulse_salience.shape[0] - (max_multiple * 3) /
                  segments_per_tempo_change, 0, max_multiple - 1])

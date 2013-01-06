@@ -6,6 +6,24 @@
 # value to having a floating-point data type.
 SAMPLE_RATE = 48000.
 
+# `NOVELTY_WINDOW_SIZE` is the number of original audio samples used to compute
+# each sample of a novelty signal. Appropriate values appear to map to the 10
+# to 30 millisecond time range. We use a power of two, since it might be more
+# efficient. At a sample rate of 48KHz, a window size of 1024 corresponds to a
+# duration of ~21.3ms.
+NOVELTY_WINDOW_SIZE = 1024
+
+# `NOVELTY_HOP_SIZE` is the number of original audio samples by which a novelty
+# signal increments when calculating the value of the next sample in the
+# novelty signal. At a sample rate of 48KHz, a hop size of 512 corresponds to a
+# duration of ~10.7ms.
+NOVELTY_HOP_SIZE = 512
+
+# Once calculated, a novelty signal is interpolated to a new rate in order to
+# be granular enough for tasks such as tempo induction. The appropriate rate
+# for the interpolated signal appears to be in the range of 100 to 200 Hz.
+NOVELTY_INTERPOLATION_FACTOR = 2
+
 # `DRUMKIT_DIR` is the directory that contains a Hydrogen drumkit to use.
 DRUMKIT_DIR = '/usr/share/hydrogen/data/drumkits/GMkit'
 
