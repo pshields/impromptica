@@ -27,8 +27,7 @@ def get_drumkit_samples(drumkit_dir=settings.DRUMKIT_DIR):
     return result
 
 
-def render_percussion(samples, samples_per_second, tatums, tactus, measures,
-                      sounds):
+def render_percussion(samples, tatums, tactus, measures, sounds):
     """Renders percussion onto the given samples.
 
     This function assumes samples[0] is the start of a new beat.

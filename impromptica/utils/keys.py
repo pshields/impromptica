@@ -28,8 +28,8 @@ def get_keys(samples, onsets, samples_per_segment=None):
     # specified.
     if not samples_per_segment:
         beats_per_minute = tempo.map_pass(samples, 1, 400)
-        samples_per_segment = settings.SAMPLE_RATE * 60.0 / beats_per_minute * 4.0
-
+        samples_per_segment = (settings.SAMPLE_RATE * 60.0 / beats_per_minute *
+                               4.0)
     for i in range(int(math.ceil(len(samples) / samples_per_segment))):
         # Get the notes on this segment.
         segment_frequencies = []

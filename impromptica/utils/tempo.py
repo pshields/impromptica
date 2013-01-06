@@ -313,11 +313,13 @@ def get_meter(
     # now these are all offset by one (e.g. the prior probability of n periods
     # is located at index n - 1 in each of the following lists.)
     ptatum = probdata.build_tempo_profile_data(
-        0.39, 0.18, hop_size / sample_rate, max_multiple)
+        0.39, 0.18, hop_size / interpolation_factor / sample_rate,
+        max_multiple)
     ptactus = probdata.build_tempo_profile_data(
-        0.28, 0.55, hop_size / sample_rate, max_multiple)
+        0.28, 0.55, hop_size / interpolation_factor / sample_rate,
+        max_multiple)
     pmeasure = probdata.build_tempo_profile_data(
-        0.26, 2.1, hop_size / sample_rate, max_multiple)
+        0.26, 2.1, hop_size / interpolation_factor / sample_rate, max_multiple)
     segments_per_tempo_change = max(
         1, int(constant_tempo_duration / (hop_size / sample_rate)))
     # Precompute the transition probabilities for all possible transitions
@@ -339,13 +341,16 @@ def get_meter(
         print("Finding beats...")
     tactus, best_tactus_cost = calculate_beats(
         tactus_periods, novelty_signal, beat_placement_strictness)
-    tactus = [i * hop_size / interpolation_factor + window_size / 2 for i in tactus]
+    tactus = [(i * hop_size + window_size / 2) / interpolation_factor
+              for i in tactus]
     tatums, best_tatum_cost = calculate_beats(
         tatum_periods, novelty_signal, beat_placement_strictness)
-    tatums = [i * hop_size / interpolation_factor + window_size / 2 for i in tatums]
+    tatums = [(i * hop_size + window_size / 2) / interpolation_factor
+              for i in tatums]
     measures, best_measure_cost = calculate_beats(
         measure_periods, novelty_signal, beat_placement_strictness)
-    measures = [i * hop_size / interpolation_factor + window_size / 2 for i in measures]
+    measures = [(i * hop_size + window_size / 2) / interpolation_factor
+                for i in measures]
     if verbose:
         medians = [np.median(x, axis=0) for x in (
             measure_periods, tactus_periods, tatum_periods)]
@@ -373,7 +378,7 @@ def get_meter(
         # Show the input audio waveform.
         plt.plot(samples, alpha=0.2, color='b')
         # Plot the musical accentuation signals.
-        plt.plot([i * hop_size / interpolation_factor + window_size / 2
+        plt.plot([(i * hop_size + window_size / 2) / interpolation_factor
                   for i in range(novelty_signal.shape[0])],
                  novelty_signal)
         # Add the locations of the identified tatums, tactus, and measures.
@@ -390,10 +395,11 @@ def get_meter(
                   cmap=cm.binary)
         ax.set_aspect('auto')
         locs, labels = plt.xticks()
-        plt.xticks(locs, [(i * hop_size / interpolation_factor + window_size / 2) / sample_rate
-                          for i in locs])
+        plt.xticks(locs, [(i * hop_size + window_size / 2) /
+                          interpolation_factor / sample_rate for i in locs])
         locs, labels = plt.yticks()
-        plt.yticks(locs, [(i * hop_size / interpolation_factor) / sample_rate for i in locs])
+        plt.yticks(locs, [(i * hop_size / interpolation_factor) / sample_rate
+                          for i in locs])
         plt.axis([0, novelty_signal.shape[0] - 1, 0, max_multiple - 1])
         plt.xlabel('Time (s)')
         plt.ylabel('Period hypothesis (s)')
@@ -407,7 +413,8 @@ def get_meter(
             (max_multiple * 3 + segments_per_tempo_change * i) /
             (sample_rate / hop_size / interpolation_factor)) for i in locs])
         locs, labels = plt.yticks()
-        plt.yticks(locs, [(i * hop_size * interpolation_factor) / sample_rate for i in locs])
+        plt.yticks(locs, [(i * hop_size * interpolation_factor) / sample_rate
+                          for i in locs])
         plt.axis([0 - (max_multiple * 3) / segments_per_tempo_change,
                  pulse_salience.shape[0] - (max_multiple * 3) /
                  segments_per_tempo_change, 0, max_multiple - 1])
@@ -441,6 +448,7 @@ def map_pass(samples, low_bpm, high_bpm, sample_rate=settings.SAMPLE_RATE):
 
     return map_best_beat(filtered_samples, low_bpm, high_bpm,
                          sample_rate=sample_rate)
+
 
 def map_best_beat(filtered_samples, low_bpm, high_bpm,
                   sample_rate=settings.SAMPLE_RATE):

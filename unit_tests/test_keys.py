@@ -35,8 +35,8 @@ class TestKeyfinding(unittest.TestCase):
             # Manually specify the onsets since our onset detection isn't
             # reliable enough yet to detect these every time.
             onset_list = [
-                    settings.SAMPLE_RATE / 5 * i +
-                    settings.SAMPLE_RATE / 10 for i in range(len(frequencies))]
+                settings.SAMPLE_RATE / 5 * i +
+                settings.SAMPLE_RATE / 10 for i in range(len(frequencies))]
             key = keys.get_keys(samples, onset_list,
                                 samples_per_segment=len(samples))[0][1]
             assert key == correct_key, self.error_message(key, correct_key)
