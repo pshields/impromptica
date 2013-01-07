@@ -23,7 +23,7 @@ def render_accompaniment(
     samples = sound.get_samples(input_filename)
     note_onsets, _, _ = onsets.get_onsets(samples)
     key_list = keys.get_keys(samples, note_onsets)
-    tatums, tactus, measures = tempo.get_meter(
+    tatums_per_tactus, tactus, measures = tempo.get_meter(
         samples, verbose=verbose, visualize=visualize)
     note_frequencies = note_freq.frequencies(note_onsets, samples)
     if echo_notes:
@@ -65,7 +65,7 @@ def render_accompaniment(
     # Add percussion.
     if use_percussion:
         sounds = percussion.get_drumkit_samples()
-        percussion.render_percussion(samples, tatums, tactus, measures, sounds)
+        percussion.render_percussion(samples, tactus, measures, sounds)
     output_filename_parts = input_filename.split('.')
     # Remove the old file extension.
     output_filename_parts.pop()

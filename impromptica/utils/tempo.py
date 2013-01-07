@@ -4,6 +4,9 @@ Works at the tatum, tactus and measure levels.
 
 References:
 
+* Davies, Matthew EP, and Mark D. Plumbley. "Context-dependent beat tracking of
+  musical audio." Audio, Speech, and Language Processing, IEEE Transactions on
+  15.3 (2007): 1009-1020.
 * Ellis, Daniel PW. "Beat tracking by dynamic programming." Journal of New
   Music Research 36.1 (2007): 51-60.
 * Klapuri, Anssi P., Antti J. Eronen, and Jaakko T. Astola. "Analysis of the
@@ -59,10 +62,10 @@ def calculate_pulse_salience(novelty_signal, frame_size, hop_size):
     return result
 
 
-def calculate_periods(
+def calculate_tactus_periods(
         max_multiple, pulse_salience, prior, ptransition, hop_size,
         periods_size):
-    """Calculates the most probable period at each segment.
+    """Calculates the most probable period at each frame.
 
     `prior` is an array of length `max_multiple` giving the prior probability
     of a period of the given length at the current metrical level.
@@ -74,7 +77,8 @@ def calculate_periods(
     tempo = np.zeros((pulse_salience.shape[0], max_multiple), dtype=np.int)
     scores = np.zeros((pulse_salience.shape[0], max_multiple))
     # Fill in the first row of the dynamic programming table.
-    scores = prior * pulse_salience
+    scores = prior * pulse_salience.swapaxes(
+        0, 1)[:max_multiple].swapaxes(0, 1)
     scores[0] /= scores[0].max()
     best = np.argmax(scores[0]) + 1
     for i in range(max_multiple):
@@ -243,60 +247,76 @@ def get_meter(
     # is located at index n - 1 in each of the following lists.)
     ptatum = probdata.build_lognorm_tempo_profile_data(
         0.39, 0.18, hop_size / interpolation_factor / sample_rate,
-        tempo_frame_size)
+        tempo_hop_size)
     ptactus = probdata.build_lognorm_tempo_profile_data(
         0.28, 0.55, hop_size / interpolation_factor / sample_rate,
-        tempo_frame_size)
+        tempo_hop_size)
     pmeasure = probdata.build_lognorm_tempo_profile_data(
         0.26, 2.1, hop_size / interpolation_factor / sample_rate,
-        tempo_frame_size)
+        tempo_hop_size)
     # Precompute the transition probabilities for all possible transitions
     # between hypotheses.
-    ptransition = probdata.build_tempo_change_profile_data(tempo_frame_size)
-    tactus_periods, tactus_scores, tactus_changes = calculate_periods(
-        tempo_frame_size, pulse_salience, ptactus, ptransition,
+    ptransition = probdata.build_tempo_change_profile_data(tempo_hop_size)
+    # Calculate the tactus periods and beats.
+    tactus_periods, tactus_scores, tactus_changes = calculate_tactus_periods(
+        tempo_hop_size, pulse_salience, ptactus, ptransition,
         tempo_hop_size, novelty_signal.shape[0])
-    tatum_periods, tatum_scores, tatum_changes = calculate_periods(
-        tempo_frame_size, pulse_salience, ptatum, ptransition,
-        tempo_hop_size, novelty_signal.shape[0])
-    measure_periods, measure_scores, measure_changes = calculate_periods(
-        tempo_frame_size, pulse_salience, pmeasure, ptransition,
-        tempo_hop_size, novelty_signal.shape[0])
-    if verbose:
-        print("Tactus changes: %s" % (str(tactus_changes)))
-        print("Tatum changes: %s" % (str(tatum_changes)))
-        print("Measure changes: %s" % (str(measure_changes)))
-        print("Finding beats...")
     tactus, best_tactus_cost = calculate_beats(
         tactus_periods, novelty_signal, beat_placement_strictness)
+    # Calculate the tatums. At a frame whose boundaries are defined by the
+    # beats at the tactus level, calculate the pulse salience weighted by prior
+    # probability.
+    tatums_per_tactus = np.zeros(len(tactus), dtype=np.int)
+    for i, first in enumerate(tactus):
+        last = novelty_signal.shape[0]
+        if i < len(tactus) - 2:
+            last = min(novelty_signal.shape[0], tactus[i + 2])
+        frame = novelty_signal[first:last]
+        normalization_factor = np.zeros(frame.shape[0] - 1)
+        for j in range(frame.shape[0] - 1):
+            normalization_factor[j] = 1 + frame.shape[0] - j
+        # Allocate the resulting tempo salience signal.
+        salience = np.zeros(frame.shape[0])
+        # Handle the special case where there is only a single frame.
+        salience[:frame.shape[0] - 1] = np.correlate(
+            frame, frame, mode='full')[
+                frame.shape[0]:2 * frame.shape[0]] / normalization_factor
+        # Crop results to the periods in question.
+        salience = salience[:min(salience.shape[0], ptatum.shape[0])]
+        salience *= ptatum[:min(salience.shape[0], ptatum.shape[0])]
+        # Zero out candidates which are not factors or close to factors of the
+        # tactus period.
+        factors = set()
+        for j in range(1, int(tactus_periods[first] ** 0.5) + 1):
+            div, mod = divmod(tactus_periods[first], j)
+            if mod == 0:
+                factors |= {j - 1, j, j + 1, div - 1, div, div + 1}
+        factors = sorted(list(factors))
+        for j in range(salience.shape[0]):
+            if j not in factors:
+                salience[j] = 0.
+        # Find the most likely number of tatums per tactus.
+        best = np.argmax(salience) + 1
+        tatums_per_tactus[i] = int(
+            round(float(tactus_periods[first / tempo_hop_size]) / best))
     tactus = [(i * hop_size + window_size / 2) / interpolation_factor
               for i in tactus]
-    tatums, best_tatum_cost = calculate_beats(
-        tatum_periods, novelty_signal, beat_placement_strictness)
-    tatums = [(i * hop_size + window_size / 2) / interpolation_factor
-              for i in tatums]
-    measures, best_measure_cost = calculate_beats(
-        measure_periods, novelty_signal, beat_placement_strictness)
-    measures = [(i * hop_size + window_size / 2) / interpolation_factor
-                for i in measures]
+    measures = [0]
+
     if verbose:
-        medians = [np.median(x, axis=0) for x in (
-            measure_periods, tactus_periods, tatum_periods)]
-        print("Median measure, tactus and tatum periods throughout the piece "
-              "are %d, %d (ratio %f), and %d (ratio %f) respectively." % (
-                  medians[0], medians[1], float(medians[0]) / medians[1],
-                  medians[2], float(medians[1]) / medians[2]))
-        print("Placing tatum, tactus, and meaure beats cost %f, %f, and %f, "
-              "respectively." % (
-                  best_tatum_cost, best_tactus_cost, best_measure_cost))
-        print("Found %d measures, %d tactus beats, %d tatums" % (
-            len(measures), len(tactus), len(tatums)))
+        print("Tactus changes: %s" % (str(tactus_changes)))
+        print("Finding beats...")
+        median_tactus = np.median(tactus_periods, axis=0)
+        median_tatums_per_tactus = np.median(tatums_per_tactus)
+        print("Median tactus periods and tatum-to-tactus ratios "
+              "are %d and %d respectively." % (
+                  median_tactus, median_tatums_per_tactus))
+        print("Placing tactus beats cost %f" % (best_tactus_cost))
+        print("Found %d measures, %d tactus beats" % (
+            len(measures), len(tactus)))
         if len(measures) > 0:
             print("%f tactus beats per measure" % (
                 float(len(tactus)) / len(measures)))
-        if len(tactus) > 0:
-            print("%f tatums per tactus beat" % (
-                float(len(tatums)) / len(tactus)))
     if visualize:
         fig = plt.figure(figsize=(9, 10))
         # Plot the original waveform and the novelty levels.
@@ -310,10 +330,8 @@ def get_meter(
                   for i in range(novelty_signal.shape[0])],
                  novelty_signal)
         # Add the locations of the identified tatums, tactus, and measures.
-        for x in measures:
-            plt.axvline(x, color='g', alpha=0.5)
-        for x in tactus:
-            plt.axvline(x, color='b', alpha=0.5)
+        #for x in measures:
+        #    plt.axvline(x, color='g', alpha=0.5)
         plt.xlabel('Sample #')
         plt.ylabel('Amplitude')
         plt.legend()
@@ -334,7 +352,7 @@ def get_meter(
         plt.xlabel('Time (s)')
         plt.ylabel('Period hypothesis (s)')
         ax = fig.add_subplot(3, 1, 3)
-        scores = (tactus_scores + tatum_scores + measure_scores).swapaxes(0, 1)
+        scores = tactus_scores.swapaxes(0, 1)
         scores /= 3.
         ax.imshow(scores, cmap=cm.binary, interpolation='nearest')
         ax.set_aspect('auto')
@@ -351,7 +369,7 @@ def get_meter(
         plt.xlabel('Time (s)')
         plt.ylabel('Period hypothesis (s)')
         plt.show()
-    return (tatums, tactus, measures)
+    return (tatums_per_tactus, tactus, measures)
 
 
 def map_pass(samples, low_bpm, high_bpm, sample_rate=settings.SAMPLE_RATE):

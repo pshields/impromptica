@@ -46,7 +46,7 @@ def get_samples(filename):
 
     # Condense multiple tracks to a single track.
     if samples.ndim > 1:
-        samples = samples.average(axis=1)
+        samples = numpy.average(samples, axis=1)
 
     # Resample the input audio to the target frequency.
     result = samplerate.resample(samples, settings.SAMPLE_RATE / sample_rate,
