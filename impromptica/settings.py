@@ -24,6 +24,14 @@ NOVELTY_HOP_SIZE = 512
 # for the interpolated signal appears to be in the range of 100 to 200 Hz.
 NOVELTY_INTERPOLATION_FACTOR = 2
 
+# `TEMPO_FRAME_SIZE` is the number of consecutive samples in the novelty signal
+# used to calculate tactus periods.
+TEMPO_FRAME_SIZE = 512
+
+# `TEMPO_HOP_SIZE` is the number of novelty samples by which possible tempo
+# changes are spaced.
+TEMPO_HOP_SIZE = 256
+
 # `DRUMKIT_DIR` is the directory that contains a Hydrogen drumkit to use.
 DRUMKIT_DIR = '/usr/share/hydrogen/data/drumkits/GMkit'
 

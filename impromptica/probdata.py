@@ -41,9 +41,9 @@ def build_distance_profile_data(standard_deviation):
     return result
 
 
-def build_tempo_profile_data(shape, scale, base_period, max_multiple):
-    """
-    Returns a likelihood table for periods of a metrical level.
+def build_lognorm_tempo_profile_data(shape, scale, base_period, max_multiple):
+    """Returns a log-Gaussian-derived likelihood table for periods of a
+    metrical level.
 
     `base_period` is the time in seconds of the base period of which all other
     period hypotheses will be integer multiples of.
@@ -53,6 +53,16 @@ def build_tempo_profile_data(shape, scale, base_period, max_multiple):
     """
     result = np.zeros(max_multiple)
     dist = scipy.stats.lognorm(shape, scale=scale)
+    for i in range(1, max_multiple + 1):
+        result[i - 1] = dist.pdf(base_period * i)
+    return result
+
+
+def build_rayleigh_tempo_profile_data(scale, base_period, max_multiple):
+    """Returns a Rayleigh-dervied likelihood table for periods of a metrical
+    level."""
+    result = np.zeros(max_multiple)
+    dist = scipy.stats.rayleigh(0, scale=scale)
     for i in range(1, max_multiple + 1):
         result[i - 1] = dist.pdf(base_period * i)
     return result

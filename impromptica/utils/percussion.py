@@ -64,5 +64,7 @@ def render_percussion(samples, tatums, tactus, measures, sounds):
     #    percussion_samples[onset:onset + len(sound_samples)] += sound_samples
 
     # Merge the percussion and original audio.
-    percussion_samples /= np.max(percussion_samples)
+    max_amplitude = np.max(percussion_samples)
+    if max_amplitude > 0:
+        percussion_samples /= max_amplitude
     sound.merge_audio(samples, percussion_samples)
