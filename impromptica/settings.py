@@ -32,6 +32,13 @@ TEMPO_FRAME_SIZE = 512
 # changes are spaced.
 TEMPO_HOP_SIZE = 256
 
+# `MAX_BEATS_PER_MEASURE` is the largest number of tactus beats per measure
+# considered when calulating target measure periods at each tactus beat. We use
+# 13 because 14 could plausibly be decomposed as two 7-period measures, 15
+# could plausibly be three 5-period measures, 16 could be four 4-period
+# measures, and 17 or more beats per measure seems implausible.
+MAX_BEATS_PER_MEASURE = 13
+
 # `DRUMKIT_DIR` is the directory that contains a Hydrogen drumkit to use.
 DRUMKIT_DIR = '/usr/share/hydrogen/data/drumkits/GMkit'
 

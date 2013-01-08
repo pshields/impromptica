@@ -33,7 +33,9 @@ from impromptica.utils import novelty
 _BEAT_PLACEMENT_STRICTNESS = 1000.
 
 
-def calculate_measures(samples, tactus):
+def calculate_measures(
+        samples, tactus, prior, ptransition,
+        max_multiple=settings.MAX_BEATS_PER_MEASURE):
     """Returns the estimated indices of the measures of the piece.
 
     The measure indices are a subset of `tactus`, a provided list of beat
@@ -57,7 +59,48 @@ def calculate_measures(samples, tactus):
     measures which do not line up well against the segmentation of the piece
     that is derived from the similarity information.
     """
-    pass
+    result = []
+    # Consider only measure periods from one up to `max_multiple`.
+    max_multiple = 13
+    # TODO Calculate the salience of various measure period hypotheses at each
+    # beat.
+    measure_salience = np.ones((len(tactus), max_multiple))
+    # Assign target measure periods using dynamic programming. `periods` is a
+    # table of the best previous periods at each tactus beat and period
+    # candidate.
+    periods = np.zeros((len(tactus), max_multiple), dtype=np.int)
+    scores = np.zeros((len(tactus), max_multiple))
+    # Fill in the first row of the dynamic programming table and set the priors
+    # at each beat.
+    scores = prior * measure_salience
+    scores[0] /= scores[0].max()
+    best = np.argmax(scores[0]) + 1
+    for i in range(max_multiple):
+        periods[0][i] = best
+    # Fill in the rest of the table. We also take into account the transition
+    # probability between two measure periods. At each beat, calculate the
+    # lowest-cost route to each possible period using the `score` array.
+    score = np.zeros(max_multiple)
+    for i in range(1, len(tactus)):
+        score *= 0.
+        for j in range(max_multiple):
+            # For each measure period hypothesis at the previous beat,
+            # calculate what the score would be at this beat and period if
+            # transitioning from it.
+            for k in range(max_multiple):
+                score[k] = scores[i - 1][k] * ptransition[k][j]
+            best = np.argmax(score)
+            periods[i][j] = best + 1
+            scores[i][j] *= score[best]
+        scores[i] /= scores[i].max()
+    # Assign the best period to each beat in reverse order.
+    period = np.zeros(len(tactus), dtype=np.int)
+    best = periods[-1][np.argmax(scores[-1])]
+    for i in range(1, scores.shape[0]):
+        period[scores.shape[0] - i] = best
+        best = periods[-i][best - 1]
+    # Now calculate the actual measure bar locations.
+    return result
 
 
 def calculate_pulse_salience(novelty_signal, frame_size, hop_size):
