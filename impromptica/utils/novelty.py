@@ -3,8 +3,9 @@
 Novelty signals model the novelty of audio over time. They are an intermediate
 representation of audio used for feature extraction. Novelty signals are also
 called accentuation signals, since they can measure the degree of accentuation
-in the audio over time. Novelty signals are used in onset detection, beat
-tracking, and other facets of music information retrieval.
+in the audio over time, or onset detection functions, since they can be used to
+find note onsets in a musical piece. Novelty signals are used in onset
+detection, beat tracking, and other facets of music information retrieval.
 """
 import math
 
@@ -13,9 +14,7 @@ import numpy as np
 from impromptica import settings
 
 
-_TRIANGLE_FILTER_BANK_SIZE = 40
-_LOG_COMPRESSION_VALUE = 100.
-_DIFFERENTIAL_WEIGHT = 0.9
+_TRIANGLE_FILTER_BANK_SIZE = 36
 
 
 def get_bin_size(window_size):
@@ -95,6 +94,7 @@ def create_triangle_filter_bank(
         # mel frequency of the current fourier bin index, increment the index.
         while (abs(centers[i] - bin_mel_frequencies[current_bin_index]) >
                abs(centers[i] - bin_mel_frequencies[current_bin_index + 1])):
+
             current_bin_index += 1
         bin_indices[i] = current_bin_index
         current_bin_index += 1
@@ -136,14 +136,12 @@ def get_segments(
     return result
 
 
-def calculate_novelty(
-        samples, log_compression_value=_LOG_COMPRESSION_VALUE,
-        differential_weight=_DIFFERENTIAL_WEIGHT,
-        window_size=settings.NOVELTY_WINDOW_SIZE,
+def spectral_flux(
+        samples, window_size=settings.NOVELTY_WINDOW_SIZE,
         hop_size=settings.NOVELTY_HOP_SIZE,
         interpolation_factor=settings.NOVELTY_INTERPOLATION_FACTOR,
         sample_rate=settings.SAMPLE_RATE, verbose=False):
-    """Returns a novelty signal for the given audio signal.
+    """Returns a spectral flux-based novelty signal for the given audio.
 
     The novelty signal is our best guess at the level of meaningful
     musical accentuation in each of a few frequency ranges which form a
@@ -153,9 +151,10 @@ def calculate_novelty(
 
     * We calculate the spectral power in each of several frequency bands at
       each segment.
-    * We approximate the differential of spectral power in each band at each
+    * We calculate the differential of spectral power in each band at each
       segment.
-    *
+    * We half-wave rectify the differentials in each band at each segment and
+      then sum them to yield the final value of the novelty signal.
     """
     # Divide the samples into segments for calculations.
     segments = get_segments(samples)
@@ -173,61 +172,23 @@ def calculate_novelty(
     bands = np.zeros((segments.shape[0], filters.shape[0]))
     for i, segment in enumerate(segments):
         powers[i] = power_spectrum(segment, sample_rate=sample_rate)
-    # To measure spectral change, we would like to calculate the change in
-    # spectral power from the previous segment to the current and normalize it
-    # by dividing it by the power level at the current segment. This can be
-    # viewed as taking the unnormalized differential of the logarithm of the
-    # spectral power at each segment. We implement mu-law compression on top
-    # of this to further accentuate variations in power when the power is
-    # already small. We increase any negative differential up to zero. Finally,
-    # we perform a weighted average of the logarithm of the spectral power with
-    # its differential, which has been found to improve accuracy.
+    # To measure spectral change, we calculate the change in spectral power
+    # from the previous segment to the current.
     differential = np.zeros((segments.shape[0], filters.shape[0]))
-    # Precompute the denominator of the mu-law compression term.
-    denominator = math.log(1 + log_compression_value)
     # Allocate the storage for the novelty signal.
-    result_before_smoothing = np.zeros(
-        segments.shape[0] * interpolation_factor)
+    result = np.zeros(segments.shape[0] * interpolation_factor)
     # Calculate the spectral change differential as previously described.
     for i in range(segments.shape[0]):
         for j in range(filters.shape[0]):
-            bands[i][j] = min(
-                1., math.log(
-                    1. + log_compression_value *
-                    np.sum(powers[i] * filters[j])) / denominator)
+            bands[i][j] = min(1., np.sum(powers[i] * filters[j]))
             # Calculate the weighted differential.
-            differential[i][j] = (
-                (1. - differential_weight) * bands[i][j] +
-                differential_weight * max(0., bands[i][j] - bands[i - 1][j]))
+            differential[i][j] = max(0., bands[i][j] - bands[i - 1][j])
             # Add this value to the novelty_signal.
-            result_before_smoothing[
-                i * interpolation_factor] += differential[i][j]
+            result[i * interpolation_factor] += differential[i][j]
         for j in range(1, interpolation_factor):
-            result_before_smoothing[
-                i * interpolation_factor + j] = result_before_smoothing[
+            result[
+                i * interpolation_factor + j] = result[
                     i * interpolation_factor]
     # Normalize the novelty signal to have a maximum of one.
-    result_before_smoothing /= filters.shape[0]
-    # Interpolate the novelty signal for finer detail for use in tempo
-    # induction.
-    result = np.zeros(segments.shape[0] * interpolation_factor)
-    # Smooth the novelty signal. Widen the novelty waves a little bit, then
-    # calculate a moving mean threshold of width 8 * interpolation_factor.
-    threshold = np.zeros(result.shape[0])
-    for i in range(result.shape[0]):
-        first = max(0, i - interpolation_factor)
-        last = min(result.shape[0], i + interpolation_factor)
-        result[i] = np.max(result_before_smoothing[first:last])
-    for i in range(result.shape[0]):
-        first = max(0, i - (4 * interpolation_factor))
-        last = min(result.shape[0], i + (4 * interpolation_factor))
-        threshold[i] = np.average(result[first:last])
-    # Subtract the threshold from the novelty signal and half-wave rectify the
-    # result.
-    result -= threshold
-    for i in range(result.shape[0]):
-        if result[i] < 0:
-            result[i] = 0
-        elif result[i] > 1:
-            print("Novelty function at index %d is %f (>1)" % (i, result[i]))
+    result /= filters.shape[0]
     return result

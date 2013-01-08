@@ -30,9 +30,9 @@ from impromptica.utils import novelty
 # scalar factor to balance this penalty with that of placing a beat at segment
 # which has a low level of musical accentuation.
 # found to work well.
-_BEAT_PLACEMENT_STRICTNESS = 1000.
+_BEAT_PLACEMENT_STRICTNESS = 10000.
 # The measure bar placement algorithm works similarly.
-_MEASURE_PLACEMENT_STRICTNESS = 1000.
+_MEASURE_PLACEMENT_STRICTNESS = 10000.
 
 
 def calculate_measures(
@@ -291,6 +291,7 @@ def calculate_beats(periods, novelty_signal, beat_placement_strictness):
     `beat_placement_strictness` is a factor applied to the penalty for placing
     beats at distances other than the target distance
     """
+    # TODO Use knowledge about when measures begin to avoid half-phase errors.
     # The `beat_cost` array tracks the best cost of an optimal set of beat
     # indices ending with a beat at the given index.
     beat_cost = np.zeros(periods.shape[0])
@@ -364,8 +365,7 @@ def get_meter(
     # Calculate the novelty of a various frequency bands across segments.
     if verbose:
         print("Calculating novelty...")
-    novelty_signal = novelty.calculate_novelty(
-        samples, verbose, verbose=verbose)
+    novelty_signal = novelty.spectral_flux(samples, verbose=verbose)
     # Calculate the salience of various pulse period hypotheses at each
     # sample in the novelty signal by calculating the autocorrelation of
     # overlapping frames of `
