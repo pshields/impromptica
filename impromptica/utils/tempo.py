@@ -151,7 +151,8 @@ def calculate_tactus_periods(
     periods = np.zeros(periods_size, dtype=np.int)
     best = tempo[-1][np.argmax(scores[-1])]
     for i in range(1, scores.shape[0]):
-        periods[i * hop_size + pulse_salience.shape[1] / 2] = best
+        periods[(scores.shape[0] - i) * hop_size +
+                pulse_salience.shape[1] / 2] = best
         best = tempo[-i][best - 1]
     # Fill in the segments that are before the first period estimate.
     for i in range(min(periods_size, pulse_salience.shape[1] / 2)):
