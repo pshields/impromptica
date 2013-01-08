@@ -4,14 +4,14 @@ Works at the tatum, tactus and measure levels.
 
 References:
 
-* Davies, Matthew EP, and Mark D. Plumbley. "Context-dependent beat tracking of
-  musical audio." Audio, Speech, and Language Processing, IEEE Transactions on
-  15.3 (2007): 1009-1020.
-* Ellis, Daniel PW. "Beat tracking by dynamic programming." Journal of New
-  Music Research 36.1 (2007): 51-60.
-* Klapuri, Anssi P., Antti J. Eronen, and Jaakko T. Astola. "Analysis of the
-  meter of acoustic musical signals." Audio, Speech, and Language Processing,
-  IEEE Transactions on 14.1 (2006): 342-355.
+1. Klapuri, Anssi P., Antti J. Eronen, and Jaakko T. Astola. "Analysis of the
+   meter of acoustic musical signals." Audio, Speech, and Language Processing,
+   IEEE Transactions on 14.1 (2006): 342-355.
+2. Ellis, Daniel PW. "Beat tracking by dynamic programming." Journal of New
+   Music Research 36.1 (2007): 51-60.
+3. Davies, Matthew EP, and Mark D. Plumbley. "Context-dependent beat tracking
+   of musical audio." Audio, Speech, and Language Processing, IEEE Transactions
+   on 15.3 (2007): 1009-1020.
 """
 import math
 
@@ -31,11 +31,13 @@ from impromptica.utils import novelty
 # which has a low level of musical accentuation.
 # found to work well.
 _BEAT_PLACEMENT_STRICTNESS = 1000.
+# The measure bar placement algorithm works similarly.
+_MEASURE_PLACEMENT_STRICTNESS = 1000.
 
 
 def calculate_measures(
-        samples, tactus, prior, ptransition,
-        max_multiple=settings.MAX_BEATS_PER_MEASURE):
+        samples, tactus, prior, ptransition, measure_placement_strictness,
+        max_multiple, verbose=False):
     """Returns the estimated indices of the measures of the piece.
 
     The measure indices are a subset of `tactus`, a provided list of beat
@@ -59,9 +61,7 @@ def calculate_measures(
     measures which do not line up well against the segmentation of the piece
     that is derived from the similarity information.
     """
-    result = []
     # Consider only measure periods from one up to `max_multiple`.
-    max_multiple = 13
     # TODO Calculate the salience of various measure period hypotheses at each
     # beat.
     measure_salience = np.ones((len(tactus), max_multiple))
@@ -96,10 +96,70 @@ def calculate_measures(
     # Assign the best period to each beat in reverse order.
     period = np.zeros(len(tactus), dtype=np.int)
     best = periods[-1][np.argmax(scores[-1])]
-    for i in range(1, scores.shape[0]):
+    for i in range(1, scores.shape[0] + 1):
         period[scores.shape[0] - i] = best
         best = periods[-i][best - 1]
+    # Calculate the change in target beats per measure throughout the course of
+    # the song.
+    changes = []
+    current_period = -1
+    for i in range(period.shape[0]):
+        if current_period != period[i]:
+            current_period = period[i]
+            changes.append((i, current_period))
+    if verbose:
+        print("Measure changes: %s" % (str(changes)))
     # Now calculate the actual measure bar locations.
+    # The `measure_cost` array tracks the best cost of an optimal set of beat
+    # indices ending with a measure bar at the given index.
+    measure_cost = np.zeros(periods.shape[0])
+    # The `previous_measure` array holds a reference to the previous beat index
+    # in the optimal set of measure bars ending at the given index.
+    previous_measure = np.ones(periods.shape[0], dtype=np.int) * -1
+    # Allocate a temporary array for calculating the lowest-cost previous index
+    # at each step. We check only the previous 2*n cells, where n is the
+    # highest measure period found found anywhere in the piece.
+    costs = np.zeros(np.max(period) * 2)
+    # Fill in the `measure_cost` and `previous_measure` tables. For each beat
+    # index within the first beat index's target period, the cost of measure
+    # placement is zero. For all other indices,  we also account for how close
+    # the resulting measure period would be to the target period if we placed a
+    # measure bar at that index.
+    for i in range(period[0]):
+        measure_cost[i] = 0.
+    for i in range(period[0], period.shape[0]):
+        target_period = period[i]
+        # Calculate the optimal previous measure bar, assuming a measure bar is
+        # placed at the current index. `furthest_back` is the maximum number of
+        # previous indices to check.
+        furthest_back = min(i, costs.shape[0])
+        for j in range(1, furthest_back + 1):
+            costs[j - 1] = measure_cost[i - j] + (
+                measure_placement_strictness *
+                math.pow(math.log(float(j) / target_period), 2.))
+        best = np.argmin(costs[:furthest_back])
+        previous_measure[i] = i - best - 1
+        # TODO Add in a dissimilarity penalty below.
+        measure_cost[i] = costs[best]
+    # After calculating the array values from beginning to end, the optimal set
+    # of measure bar indices is the set found from backtracking through
+    # `previous_measure` starting at the lowest-cost index in the last m
+    # indices, where m is the target period of the last index. Start by finding
+    # the lowest-cost index from the the last m indices of `measure_cost`.
+    i = np.argmin(measure_cost[period.shape[0] - period[-1]:]) + (
+        period.shape[0] - period[-1])
+    if verbose:
+        best_cost = measure_cost[i]
+        print("Best cost for measure selection is %f" % (best_cost))
+    # Accumulate the optimal measure bar indices into a list.
+    beat_indices = []
+    while i >= 0:
+        beat_indices.append(i)
+        i = previous_measure[i]
+    # Reverse the list to get the in-order sequence of measure bar indices.
+    beat_indices.reverse()
+    # Get the actual indices into samples.
+    result = [tactus[i] for i in beat_indices]
     return result
 
 
@@ -294,6 +354,8 @@ def get_meter(
         tempo_frame_size=settings.TEMPO_FRAME_SIZE,
         tempo_hop_size=settings.TEMPO_HOP_SIZE,
         beat_placement_strictness=_BEAT_PLACEMENT_STRICTNESS,
+        measure_placement_strictness=_MEASURE_PLACEMENT_STRICTNESS,
+        max_beats_per_measure=settings.MAX_BEATS_PER_MEASURE,
         sample_rate=settings.SAMPLE_RATE,
         verbose=False, visualize=False):
     """Returns (tatums, tactus, measures) pulse indices."""
@@ -321,9 +383,6 @@ def get_meter(
         tempo_hop_size)
     ptactus = probdata.build_lognorm_tempo_profile_data(
         0.28, 0.55, hop_size / interpolation_factor / sample_rate,
-        tempo_hop_size)
-    pmeasure = probdata.build_lognorm_tempo_profile_data(
-        0.26, 2.1, hop_size / interpolation_factor / sample_rate,
         tempo_hop_size)
     # Precompute the transition probabilities for all possible transitions
     # between hypotheses.
@@ -372,7 +431,15 @@ def get_meter(
             round(float(tactus_periods[first / tempo_hop_size]) / best))
     tactus = [(i * hop_size + window_size / 2) / interpolation_factor
               for i in tactus]
-    measures = [0]
+    # Calculate the prior probability of n tactus beats per measure. The data
+    # is based on Figure 8 from [1], with likelihoods for periods 10-13 made
+    # up.
+    pmeasure = np.array(
+        [0.16, 0.18, 0.14, 0.22, 0.08, 0.16, 0.08, 0.16, 0.14, 0.04, 0.01,
+         0.04, 0.01])
+    measures = calculate_measures(
+        samples, tactus, pmeasure, ptransition, measure_placement_strictness,
+        max_beats_per_measure, verbose=verbose)
 
     if verbose:
         print("Tactus changes: %s" % (str(tactus_changes)))
