@@ -33,6 +33,33 @@ from impromptica.utils import novelty
 _BEAT_PLACEMENT_STRICTNESS = 1000.
 
 
+def calculate_measures(samples, tactus):
+    """Returns the estimated indices of the measures of the piece.
+
+    The measure indices are a subset of `tactus`, a provided list of beat
+    indices.
+
+    We formulate the measure-finding problem as follows: Given a set of beat
+    indices at the tactus level, find the subset of beat indices which
+    minimize a cost function constructed to penalize subsets that are poor
+    candidates for measure boundaries.
+
+    To solve the problem, we first find a target number of tactus beats per
+    measure, which may vary throughout the piece. This processes uses
+    similarity information, prior probabilities for potential measure periods
+    (in terms of tactus beats per measure), and a likelihood function for
+    changes in measure period.
+
+    After finding the target measure period(s) for the piece, we attempt to
+    place the beginnings of measures in such a fashion as to minimize a cost
+    function which penalizes measure periods at periods other than the target
+    as well as measures which poorly account for similarity information (e.g.
+    measures which do not line up well against the segmentation of the piece
+    that is derived from the similarity information.
+    """
+    pass
+
+
 def calculate_pulse_salience(novelty_signal, frame_size, hop_size):
     """Returns salience information on period hypotheses.
 
