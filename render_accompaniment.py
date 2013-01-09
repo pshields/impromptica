@@ -6,6 +6,7 @@ The resulting audio file is saved in the same folder as the input file with
 """
 import argparse
 
+import numpy
 from scikits import audiolab
 
 from impromptica import settings
@@ -18,15 +19,18 @@ from impromptica.utils import tempo
 
 
 def render_accompaniment(
-        input_filename, echo_notes, echo_key_chords, use_percussion,
-        use_midi, verbose=False, visualize=False):
+        input_filename, accompaniment_only, echo_notes, echo_key_chords,
+        use_percussion, metronome, use_midi, verbose=False, visualize=False):
+    # Get the samples from the file.
     samples = sound.get_samples(input_filename)
-    note_onsets, _, _ = onsets.get_onsets(samples)
-    key_list = keys.get_keys(samples, note_onsets)
-    tatums_per_tactus, tactus, measures = tempo.get_meter(
+    # Prepare the result samples array.
+    result = numpy.zeros(samples.shape[0])
+    measures, tactus, tatums, tatums_per_tactus = tempo.get_meter(
         samples, verbose=verbose, visualize=visualize)
-    note_frequencies = note_freq.frequencies(note_onsets, samples)
     if echo_notes:
+        note_onsets, _, _ = onsets.get_onsets(samples)
+        key_list = keys.get_keys(samples, note_onsets)
+        note_frequencies = note_freq.frequencies(note_onsets, samples)
         # For each onset, match detected frequencies with square waves.
         for onsetnum, onset in enumerate(sorted(note_frequencies)):
             # Get the notes detected at this onset.
@@ -62,10 +66,14 @@ def render_accompaniment(
                         time_elapsed, 0.5, frequency)
                 merged_note = merged_note[:next_onset - onset]
                 sound.merge_audio(samples[onset: next_onset], merged_note)
-    # Add percussion.
-    if use_percussion:
-        sounds = percussion.get_drumkit_samples()
-        percussion.render_percussion(samples, tactus, measures, sounds)
+    if metronome:
+        soundbank = percussion.get_drumkit_samples()
+        levels = [measures, tactus, tatums]
+        percussion.render_metronome(result, levels, soundbank)
+    # Unless requested otherwise, add the original audio to the result track.
+    if not accompaniment_only:
+        sound.merge_audio(result, samples)
+    # Calculate the filename of the output file.
     output_filename_parts = input_filename.split('.')
     # Remove the old file extension.
     output_filename_parts.pop()
@@ -73,7 +81,7 @@ def render_accompaniment(
     output_filename = '%s_accompanied.wav' % ('.'.join(output_filename_parts))
     output_file = audiolab.Sndfile(output_filename, 'w', audiolab.Format(), 1,
                                    settings.SAMPLE_RATE)
-    output_file.write_frames(samples)
+    output_file.write_frames(result)
     output_file.close()
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -83,24 +91,31 @@ parser.add_argument('input_file', help=(
     'http://www.mega-nerd.com/libsndfile/.'))
 
 parser.add_argument(
+    '--accompaniment-only', action='store_true', help=(
+        'Output only the generated accompaniment; mute the original audio.'))
+parser.add_argument(
     '--echo-notes', help='On onsets, play the identified notes.',
     action='store_true')
 parser.add_argument(
-    '--echo-key-chords', help=(
-    'On onsets, play the primary chord of the identified key.'),
-    action='store_true')
+    '--echo-key-chords', action='store_true', help=(
+    'On onsets, play the primary chord of the identified key.'))
+parser.add_argument(
+    '--metronome', action='store_true', help=(
+        'Play percussive sounds at the beats of all identified metrical '
+        'levels.'))
 parser.add_argument(
     '--percussion', help='Generate percussion', action='store_true')
 parser.add_argument(
-    '--use_midi', help='Generate midi notes instead of square waves',
+    '--use-midi', help='Generate midi notes instead of square waves.',
     action='store_true')
 parser.add_argument(
     '--verbose', help='Enable verbose output', action='store_true')
 parser.add_argument(
-    '--visualize', help='Enable all visualizations by default',
+    '--visualize', help='Enable all visualizations by default.',
     action='store_true')
 
 args = parser.parse_args()
 render_accompaniment(
-    args.input_file, args.echo_notes, args.echo_key_chords, args.percussion,
-    args.use_midi, args.verbose, args.visualize)
+    args.input_file, args.accompaniment_only, args.echo_notes,
+    args.echo_key_chords, args.percussion, args.metronome, args.use_midi,
+    args.verbose, args.visualize)

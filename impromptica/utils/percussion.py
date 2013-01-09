@@ -27,44 +27,26 @@ def get_drumkit_samples(drumkit_dir=settings.DRUMKIT_DIR):
     return result
 
 
-def render_percussion(samples, tactus, measures, sounds):
-    """Renders percussion onto the given samples.
+def render_metronome(samples, levels, soundbank):
+    """Renders percussive sounds at the beats of given metrical levels.
 
-    This function assumes samples[0] is the start of a new beat.
-
-    This function currently uses a predefined drum loop for the generated
-    purcussion. In the future it should use more advanced logic to generate
-    percussion appropriate to the piece.
+    `levels` is a list of lists of beat indices, where each top-level list
+    represents the beats at a particular metrical level.
     """
-    # Calculate some quantities we'll want to use.
-    n = len(samples)
-    # Render the percussion onto a blank track.
-    percussion_samples = np.zeros(n, dtype=np.double)
-    sound_samples = sounds[15]
-    for onset in measures:
-        # Calculate the onset for the samples for this sound.
-        if onset + len(sound_samples) > n:
-            sound_samples = sound_samples[:n - onset]
-        # Create samples for this sound at the appropriate offset.
-        percussion_samples[onset:onset + len(sound_samples)] += sound_samples
-    sound_samples = sounds[11]
-    for onset in tactus:
-        # Calculate the onset for the samples for this sound.
-        if onset + len(sound_samples) > n:
-            sound_samples = sound_samples[:n - onset]
-        # Create samples for this sound at the appropriate offset.
-        percussion_samples[onset:onset + len(sound_samples)] += sound_samples
-    # Wait for tatum detection to get a little bit better before adding this.
-    # sound_samples = sounds[4]
-    #for onset in tatums:
-    #    # Calculate the onset for the samples for this sound.
-    #    if onset + len(sound_samples) > n:
-    #        sound_samples = sound_samples[:n - onset]
-        # Create samples for this sound at the appropriate offset.
-    #    percussion_samples[onset:onset + len(sound_samples)] += sound_samples
-
-    # Merge the percussion and original audio.
-    max_amplitude = np.max(percussion_samples)
+    # Select a crash symbol to play on measure beats, a cowbell to play on
+    # tactus beats, and a closed hi-hat to play on tatum beats.
+    sounds = (soundbank[15], soundbank[11], soundbank[6])
+    result = np.zeros(samples.shape[0])
+    for s, beats in zip(sounds, levels):
+        for onset in beats:
+            # Crop the sound if necessary.
+            if onset + s.shape[0] > samples.shape[0]:
+                s = s[:samples.shape[0] - onset]
+            # Create samples for this sound at the appropriate offset.
+            result[onset:onset + s.shape[0]] += s
+    # Normalize the amplitude of the resulting track.
+    max_amplitude = np.max(result)
     if max_amplitude > 0:
-        percussion_samples /= max_amplitude
-    sound.merge_audio(samples, percussion_samples)
+        result /= max_amplitude
+    # Merge the samples with the provided input track.
+    sound.merge_audio(samples, result)

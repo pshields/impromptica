@@ -359,7 +359,15 @@ def get_meter(
         max_beats_per_measure=settings.MAX_BEATS_PER_MEASURE,
         sample_rate=settings.SAMPLE_RATE,
         verbose=False, visualize=False):
-    """Returns (tatums, tactus, measures) pulse indices."""
+    """Returns (measures, tactus, tatums, tatums_per_tactus) pulse information.
+
+    `measures`, `tactus`, and `tatums` are each lists of beat indices for the
+    associated metrical levels.
+
+    `tatums_per_tactus` is an array containing the number of tatums per tactus
+    for the period immediately following the tactus beat refered to by the
+    index into the array.
+    """
     if verbose:
         print("Beginning tempo recognition...")
     # Calculate the novelty of a various frequency bands across segments.
@@ -431,6 +439,21 @@ def get_meter(
             round(float(tactus_periods[first / tempo_hop_size]) / best))
     tactus = [(i * hop_size + window_size / 2) / interpolation_factor
               for i in tactus]
+    # Calculate the beat indices of the tatums.
+    tatums = []
+    for i in range(tatums_per_tactus.shape[0]):
+        # Calculate the first index of the span from the current tactus beat
+        # to the next (or the end of the piece, if there are no future tactus
+        # beats.)
+        first = tactus[i]
+        if i == tatums_per_tactus.shape[0] - 1:
+            last = samples.shape[0]
+        else:
+            last = tactus[i + 1]
+        width = last - first
+        # Space the tatums equally apart in this period.
+        for i in range(tatums_per_tactus[i]):
+            tatums.append(first + float(i * width) / tatums_per_tactus[i])
     # Calculate the prior probability of n tactus beats per measure. The data
     # is based on Figure 8 from [1], with likelihoods for periods 10-13 made
     # up.
@@ -507,7 +530,7 @@ def get_meter(
         plt.xlabel('Time (s)')
         plt.ylabel('Period hypothesis (s)')
         plt.show()
-    return (tatums_per_tactus, tactus, measures)
+    return (measures, tactus, tatums, tatums_per_tactus)
 
 
 def map_pass(samples, low_bpm, high_bpm, sample_rate=settings.SAMPLE_RATE):
