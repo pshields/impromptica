@@ -22,6 +22,7 @@ import numpy as np
 from impromptica import probdata
 from impromptica import settings
 from impromptica.utils import novelty
+from impromptica.utils import structure
 from impromptica.utils import visualization
 
 
@@ -168,28 +169,33 @@ def calculate_pulse_salience(novelty_signal, frame_size, hop_size):
     """Returns salience information on period hypotheses.
 
     Period hypothesis are integers representing period length in segments.
+
+    Only periods up to half of the frame size are considered, since quality
+    of the autocorrelation has been found to degenerate as periods approach
+    the size of the frame.
     """
     # `frames_size` is the number of output frames.
     frames_size = (novelty_signal.shape[0] - frame_size) / hop_size + 1
     # `normalization_factor` is a denominator applied to each hypothesis term.
-    normalization_factor = np.zeros(frame_size - 1)
-    for i in range(frame_size - 1):
-        normalization_factor[i] = 1 + frame_size - i
+    normalization_factor = np.linspace(frame_size - 1, 0, frame_size)[
+        :frame_size / 2]
     # Allocate the resulting tempo salience signal.
-    result = np.zeros((max(frames_size, 1), frame_size))
+    result = np.zeros((max(frames_size, 1), frame_size / 2))
     if frames_size < 1:
         # Handle the special case where there is only a single frame.
-        frame = np.zeros(frame_size)
+        frame = np.zeros(frame_size / 2)
         frame[:novelty_signal.shape[0]] = novelty_signal
-        result[0][:frame_size - 1] = np.correlate(frame, frame, mode='full')[
-            frame_size:2 * frame_size] / normalization_factor
+        result[0] = np.correlate(frame, frame, mode='full')[
+            frame_size:frame_size + frame_size / 2] / normalization_factor
     else:
-        # Calculate the autocorrelation in each frame.
+        # Calculate the autocorrelation in each frame. Only copy over the
+        # values for the lower half of all possible period hypotheses since the
+        # values higher than that were found to degenerate and throw off the
+        # results.
         for i in range(frames_size):
             frame = novelty_signal[i * hop_size:i * hop_size + frame_size]
-            result[i][:frame_size - 1] = np.correlate(
-                frame, frame, mode='full')[
-                    frame_size:2 * frame_size] / normalization_factor
+            result[i] = np.correlate(frame, frame, mode='full')[
+                frame_size:frame_size + frame_size / 2] / normalization_factor
     return result
 
 
@@ -237,7 +243,8 @@ def calculate_tactus_periods(
             for k in range(j - 1, j + 2):
                 buf.append(k)
         relevant.extend(buf)
-        relevant = sorted(list(set(relevant)))
+        relevant = [x for x in sorted(list(set(relevant)))
+                    if 0 <= x < scores.shape[1]]
         for j in relevant:
             # For each period in the previous possible tempo change segment,
             # calculate what the score would be at this segment and period if
@@ -402,6 +409,12 @@ def get_meter(
         tempo_hop_size, novelty_signal.shape[0])
     tactus, best_tactus_cost = calculate_beats(
         tactus_periods, novelty_signal, beat_placement_strictness)
+    # Calculate the boundaries for segmentation of the piece.
+    boundaries = []
+    for a, b in zip(tactus[:-1], tactus[1:]):
+        boundaries.extend([a, (a + b) / 2])
+    boundaries.append(tactus[-1])
+    boundaries = np.array(boundaries)
     # Calculate the tatums. At a frame whose boundaries are defined by the
     # beats at the tactus level, calculate the pulse salience weighted by prior
     # probability.
@@ -464,7 +477,10 @@ def get_meter(
     measures = calculate_measures(
         samples, tactus, pmeasure, ptransition, measure_placement_strictness,
         max_beats_per_measure, verbose=verbose)
-
+    # Calculate the high-level structure of the piece.
+    piece_structure = structure.calculate_structure(
+        samples, boundaries, pulse_salience, tempo_hop_size,
+        visualize=visualize)
     if verbose:
         print("Tactus changes: %s" % (str(tactus_changes)))
         print("Finding beats...")
@@ -491,9 +507,11 @@ def get_meter(
         plt.plot([(i * hop_size + window_size / 2) / interpolation_factor
                   for i in range(novelty_signal.shape[0])],
                  novelty_signal)
-        # Add the locations of the identified tatums, tactus, and measures.
-        #for x in measures:
-        #    plt.axvline(x, color='g', alpha=0.5)
+        # Add the locations of the identified tactus and measures.
+        for x in measures:
+            plt.axvline(x, color='g', alpha=0.5)
+        for x in tactus:
+            plt.axvline(x, color='b', alpha=0.5)
         plt.xlabel('Sample #')
         plt.ylabel('Amplitude')
         plt.legend()

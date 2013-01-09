@@ -30,7 +30,7 @@ TEMPO_FRAME_SIZE = 512
 
 # `TEMPO_HOP_SIZE` is the number of novelty samples by which possible tempo
 # changes are spaced.
-TEMPO_HOP_SIZE = 256
+TEMPO_HOP_SIZE = 32
 
 # `MAX_BEATS_PER_MEASURE` is the largest number of tactus beats per measure
 # considered when calulating target measure periods at each tactus beat. We use
