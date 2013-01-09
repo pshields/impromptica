@@ -22,6 +22,7 @@ import numpy as np
 from impromptica import probdata
 from impromptica import settings
 from impromptica.utils import novelty
+from impromptica.utils import visualization
 
 
 # The beat placement algorithm assigns a penalty for placing a beat at a tempo
@@ -496,23 +497,14 @@ def get_meter(
         plt.xlabel('Sample #')
         plt.ylabel('Amplitude')
         plt.legend()
-        # Visualize the pulse salience of each period hypothesis over time.
+        # Visualize the rhythmogram of the piece.
+        rate = (sample_rate / hop_size) * interpolation_factor
+        visualization.show_rhythmogram(
+            pulse_salience.swapaxes(0, 1),
+            rate / tempo_hop_size,
+            window_size / 2. / sample_rate,
+            1. / rate)
         ax = fig.add_subplot(3, 1, 2)
-        ax.imshow(pulse_salience.swapaxes(0, 1), interpolation='nearest',
-                  cmap=cm.binary)
-        ax.set_aspect('auto')
-        locs, labels = plt.xticks()
-        plt.xticks(locs, [(i * hop_size + window_size / 2) /
-                          interpolation_factor * tempo_hop_size +
-                          tempo_frame_size / 2
-                          / sample_rate for i in locs])
-        locs, labels = plt.yticks()
-        plt.yticks(locs, [(i * hop_size / interpolation_factor) / sample_rate
-                          for i in locs])
-        plt.axis([0, pulse_salience.shape[0] - 1, 0, tempo_frame_size - 1])
-        plt.xlabel('Time (s)')
-        plt.ylabel('Period hypothesis (s)')
-        ax = fig.add_subplot(3, 1, 3)
         scores = tactus_scores.swapaxes(0, 1)
         scores /= 3.
         ax.imshow(scores, cmap=cm.binary, interpolation='nearest')
