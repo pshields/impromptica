@@ -14,7 +14,8 @@ from impromptica.utils import visualization
 
 
 def calculate_structure(
-        samples, boundaries, pulse_salience, tempo_hop_size, visualize=False):
+        samples, boundaries, pulse_salience, tempo_hop_size, measure_prior,
+        visualize=False):
     """Calculates the structure of the musical piece.
 
     `boundaries` is an array of possible segment boundaries, as indices into
@@ -42,9 +43,13 @@ def calculate_structure(
         (boundaries.shape[0] - 1, boundaries.shape[0] - 1))
     for i in range(rhythm_similarity.shape[0]):
         for j in range(i, rhythm_similarity.shape[0]):
-            rhythm_similarity[i][j] = rhythm_similarity[j][i] = similarity.l2(
+            rhythm_similarity[i][j] = rhythm_similarity[j][i] = 1. - similarity.l2(
                 rhythm[i], rhythm[j])
-    # Normalize the similarity matrix to have a maximum value of 1.
+    # Normalize the similarity matrix to have a maximum value of 1 and a minimum value
+    # of zero.
+    min_value = np.min(np.min(rhythm_similarity, axis=1))
+    if min_value > 0:
+        rhythm_similarity -= min_value
     max_value = np.max(np.max(rhythm_similarity, axis=1))
     if max_value > 0:
         rhythm_similarity /= max_value
@@ -58,6 +63,10 @@ def calculate_structure(
         width = last - i - 1
         period_salience[i][:width / 2] = np.average(
             np.resize(rhythm_similarity[i][i + 1:last], (2, width/2)), axis=0)
+    # Normalize the table to have a minimum v
+    # Weight the salience by prior.
+    for i in range(period_salience.shape[0]):
+        period_salience[i] *= measure_prior
     period_salience = period_salience.swapaxes(0, 1)
     if visualize:
         # Visualize the self-similarity matrix of the rhythm feature.

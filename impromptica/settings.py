@@ -39,6 +39,10 @@ TEMPO_HOP_SIZE = 32
 # measures, and 17 or more beats per measure seems implausible.
 MAX_BEATS_PER_MEASURE = 13
 
+# `MAX_TATUMS_PER_BEAT` is similar to `MAX_BEATS_PER_MEASURE` but for one
+# metrical level lower.
+MAX_TATUMS_PER_BEAT = 13
+
 # `DRUMKIT_DIR` is the directory that contains a Hydrogen drumkit to use.
 DRUMKIT_DIR = '/usr/share/hydrogen/data/drumkits/GMkit'
 

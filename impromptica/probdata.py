@@ -55,6 +55,11 @@ def build_lognorm_tempo_profile_data(shape, scale, base_period, max_multiple):
     dist = scipy.stats.lognorm(shape, scale=scale)
     for i in range(1, max_multiple + 1):
         result[i - 1] = dist.pdf(base_period * i)
+    # Divide the values in the table by the maximum if the maximum is greater
+    # than one.
+    max_value = np.max(result)
+    if max_value > 1:
+        result /= max_value
     return result
 
 
