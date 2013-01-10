@@ -522,23 +522,6 @@ def get_meter(
             rate / tempo_hop_size,
             window_size / 2. / sample_rate,
             1. / rate)
-        ax = fig.add_subplot(3, 1, 2)
-        scores = tactus_scores.swapaxes(0, 1)
-        scores /= 3.
-        ax.imshow(scores, cmap=cm.binary, interpolation='nearest')
-        ax.set_aspect('auto')
-        locs, labels = plt.xticks()
-        plt.xticks(locs, [(
-            (hop_size * i) /
-            (sample_rate / hop_size / interpolation_factor)) for i in locs])
-        locs, labels = plt.yticks()
-        plt.yticks(locs, [(i * hop_size / interpolation_factor) / sample_rate
-                          for i in locs])
-        plt.axis([0 - tempo_frame_size / hop_size,
-                 pulse_salience.shape[0] - tempo_frame_size /
-                 hop_size, 0, tempo_frame_size - 1])
-        plt.xlabel('Time (s)')
-        plt.ylabel('Period hypothesis (s)')
         plt.show()
     return (measures, tactus, tatums, tatums_per_tactus)
 

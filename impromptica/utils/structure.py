@@ -8,6 +8,7 @@ References:
 """
 import numpy as np
 
+from impromptica import settings
 from impromptica.utils import similarity
 from impromptica.utils import visualization
 
@@ -47,8 +48,20 @@ def calculate_structure(
     max_value = np.max(np.max(rhythm_similarity, axis=1))
     if max_value > 0:
         rhythm_similarity /= max_value
+    # For measure-finding, calculate a new period salience table.
+    period_salience = np.ones(
+        (boundaries.shape[0] - 1, settings.MAX_BEATS_PER_MEASURE * 2))
+    for i in range(boundaries.shape[0] - 1):
+        last = i + 1 + settings.MAX_BEATS_PER_MEASURE * 2
+        if last >= boundaries.shape[0]:
+            last = boundaries.shape[0] - 1
+        width = last - i - 1
+        period_salience[i][:width] = rhythm_similarity[i][i + 1:last]
+    period_salience = period_salience.swapaxes(0, 1)
     if visualize:
         # Visualize the self-similarity matrix of the rhythm feature.
-        visualization.show_self_similarity_matrix(
+        visualization.show_salience(
             rhythm_similarity, "Rhythm similarity")
+        # Visualize `period_salience`.
+        visualization.show_salience(period_salience, "Measure salience")
     return [[]]

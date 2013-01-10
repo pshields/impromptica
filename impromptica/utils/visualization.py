@@ -3,6 +3,27 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 
+def show_salience(data, title):
+    """Show salience of two-dimensional data.
+
+    `data` is a table of salience values indexed first by period minus one, and
+    second by time value.
+
+    Can be used to visualize a self-similarity matrix, or the salience of
+    period hypotheses over time.
+    """
+    fig = plt.figure(figsize=(9, 9))
+    plt.title(title)
+    ax = fig.add_subplot(1, 1, 1)
+    # Show the data.
+    ax.imshow(data, interpolation='nearest', cmap=cm.jet)
+    plt.axis([0, data.shape[1] - 1, 0, data.shape[0] - 1])
+    # Allow the aspect ratio of the image to be more natural.
+    ax.set_aspect('auto')
+    plt.tight_layout()
+    plt.show()
+
+
 def show_rhythmogram(data, sample_rate, offset, base_period):
     """Show a rhythmogram of the given data.
 
@@ -34,19 +55,5 @@ def show_rhythmogram(data, sample_rate, offset, base_period):
     plt.axis([0, data.shape[1] - 1, 0, data.shape[0] - 1])
     plt.xlabel("Time (s)")
     plt.ylabel("Period hypothesis (s)")
-    plt.tight_layout()
-    plt.show()
-
-
-def show_self_similarity_matrix(data, title):
-    """Show a self-similarity matrix."""
-    fig = plt.figure(figsize=(9, 9))
-    plt.title(title)
-    ax = fig.add_subplot(1, 1, 1)
-    # Show the data.
-    ax.imshow(data, interpolation='nearest', cmap=cm.jet)
-    plt.axis([0, data.shape[0] - 1, 0, data.shape[0] - 1])
-    # Allow the aspect ratio of the image to be more natural.
-    ax.set_aspect('auto')
     plt.tight_layout()
     plt.show()
