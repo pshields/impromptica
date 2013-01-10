@@ -20,7 +20,7 @@ from impromptica.utils import tempo
 
 def render_accompaniment(
         input_filename, accompaniment_only, echo_notes, echo_key_chords,
-        use_percussion, metronome, use_midi, verbose=False, visualize=False):
+        use_percussion, metronome, soundfont, verbose=False, visualize=False):
     # Get the samples from the file.
     samples = sound.get_samples(input_filename)
     # Prepare the result samples array.
@@ -57,10 +57,10 @@ def render_accompaniment(
                 num_samples = next_onset - onset
                 time_elapsed = sound.samples_to_seconds(
                     num_samples)
-                if use_midi:
+                if soundfont:
                     # Use a trumpet sound by default.
                     merged_note = sound.gen_midi_note(
-                        time_elapsed, 0.5, frequency, intrument=56)
+                        soundfont, time_elapsed, 0.5, frequency, instrument=56)
                 else:
                     merged_note = sound.generate_note(
                         time_elapsed, 0.5, frequency)
@@ -89,7 +89,6 @@ parser.add_argument('input_file', help=(
     'Input audio file. The format of the audio file must be one accepted by '
     'libsndfile. For a list of compatible formats, see '
     'http://www.mega-nerd.com/libsndfile/.'))
-
 parser.add_argument(
     '--accompaniment-only', action='store_true', help=(
         'Output only the generated accompaniment; mute the original audio.'))
@@ -106,8 +105,9 @@ parser.add_argument(
 parser.add_argument(
     '--percussion', help='Generate percussion', action='store_true')
 parser.add_argument(
-    '--use-midi', help='Generate midi notes instead of square waves.',
-    action='store_true')
+    '--soundfont', action='store', help=(
+        'The filename of a soundfont to use for note generation instead of '
+        'the default synthesized note sounds.'))
 parser.add_argument(
     '--verbose', help='Enable verbose output', action='store_true')
 parser.add_argument(
@@ -117,5 +117,5 @@ parser.add_argument(
 args = parser.parse_args()
 render_accompaniment(
     args.input_file, args.accompaniment_only, args.echo_notes,
-    args.echo_key_chords, args.percussion, args.metronome, args.use_midi,
+    args.echo_key_chords, args.percussion, args.metronome, args.soundfont,
     args.verbose, args.visualize)

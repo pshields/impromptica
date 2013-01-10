@@ -26,3 +26,8 @@ Impromptica currently detects the following features:
 * Note pitch values (as equal-temperament notes)
 * Tempo (in beats per minute)
 * Key (fixed-size segments of the piece are classified as major or minor)
+
+Soundfonts
+----------
+
+You can plug in a soundfont for generated notes instead of using the default synthesized audio. Refer to the documentation of the `--soundfont` command-line argument.

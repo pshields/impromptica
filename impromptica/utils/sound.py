@@ -159,8 +159,9 @@ def generate_note(duration, amplitude, frequency,
     return result
 
 
-def gen_midi_note(duration, amplitude, frequency,
-                  sample_rate=settings.SAMPLE_RATE, instrument=0):
+def gen_midi_note(
+        soundfont_filename, duration, amplitude, frequency,
+        sample_rate=settings.SAMPLE_RATE, instrument=0):
     """Generate a midi note.
 
     duration: Time in seconds of clip
@@ -173,14 +174,12 @@ def gen_midi_note(duration, amplitude, frequency,
     """
     notenum = frequency_to_note(frequency)
 
-    curdir = os.path.dirname(__file__)
     fs = fluidsynth.Synth()
     fs.start(driver="alsa")
-    soundfont_id = fs.sfload(os.path.join(curdir, "soundfonts/FluidR3_GM.sf2"))
+    soundfont_id = fs.sfload(soundfont_filename)
     fs.program_select(0, soundfont_id, 0, 0)
 
-    #Generate at medium amplitude to avoid artifacts
-    #Generate at medium amplitude to avoid artifacts
+    # Generate at medium amplitude to avoid artifacts
     fs.noteon(0, notenum, int(amplitude * 50))
     note = fs.get_samples(seconds_to_samples(duration, sample_rate))
     fs.noteoff(0, notenum)
@@ -195,7 +194,7 @@ def gen_midi_note(duration, amplitude, frequency,
     mono_note = note[mono_note_indices]
     mono_note = mono_note.astype(float)
 
-    #Audiolab compliancy, amplitude adjustment
+    # Audiolab compliancy, amplitude adjustment
     mono_note /= numpy.max(mono_note)
     mono_note *= amplitude
     dampening = scipy.hamming(len(mono_note))
