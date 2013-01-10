@@ -16,13 +16,12 @@ References:
 import math
 
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import numpy as np
 
 from impromptica import probdata
 from impromptica import settings
 from impromptica.utils import novelty
-from impromptica.utils import structure
+from impromptica.utils import similarity
 from impromptica.utils import visualization
 
 
@@ -34,16 +33,16 @@ from impromptica.utils import visualization
 # found to work well.
 _BEAT_PLACEMENT_STRICTNESS = 10000.
 # The measure bar placement algorithm works similarly.
-_MEASURE_PLACEMENT_STRICTNESS = 10000.
+_MEASURE_PLACEMENT_STRICTNESS = 100000.
 
 
 def calculate_measures(
-        samples, tactus, prior, ptransition, measure_placement_strictness,
-        max_multiple, verbose=False):
+        samples, tactus, pulse_salience, tempo_hop_size, prior, ptransition,
+        measure_placement_strictness, max_multiple, verbose=False):
     """Returns the estimated indices of the measures of the piece.
 
-    The measure indices are a subset of `tactus`, a provided list of beat
-    indices.
+    `tactus` is a list of estimated tactus beats as indices into a novelty
+    signal.
 
     We formulate the measure-finding problem as follows: Given a set of beat
     indices at the tactus level, find the subset of beat indices which
@@ -63,18 +62,65 @@ def calculate_measures(
     measures which do not line up well against the segmentation of the piece
     that is derived from the similarity information.
     """
+    # The tactus might be a half-phase off, so we'll do our measure
+    # calculations at the half-tactus level. Add half-beat indices.
+    beats = []
+    for a, b in zip(tactus[:-1], tactus[1:]):
+        beats.extend([a, (a + b) / 2])
+    beats.append(tactus[-1])
+    # Remove beats that we don't have pulse salience information for.
+    for i, beat in enumerate(beats):
+        if beat / tempo_hop_size + 1 >= pulse_salience.shape[0]:
+            beats = beats[:i - 1]
+            break
+    beats = np.array(beats)
+    # Calculate pulse salience vectors for each unit segment by averaging the
+    # pulse salience frames between the beginning and end of each segment.
+    rhythm = np.zeros((beats.shape[0] - 1, pulse_salience.shape[1]))
+    for i in range(beats.shape[0] - 1):
+        first, last = (beats[i] / tempo_hop_size,
+                       beats[i + 1] / tempo_hop_size + 1)
+        rhythm[i] = np.average(pulse_salience[first:last], axis=0)
+    # Crop rhythm vectors for the last few beats, which don't have pulse
+    # salience associated with them.
+    rhythm_similarity = np.zeros(
+        (beats.shape[0] - 1, beats.shape[0] - 1))
+    for i in range(rhythm_similarity.shape[0]):
+        for j in range(i, rhythm_similarity.shape[0]):
+            rhythm_similarity[i][j] = rhythm_similarity[j][i] = 1. - (
+                similarity.l2(rhythm[i], rhythm[j]))
+    # Normalize the similarity matrix to have a maximum value of 1 and a
+    # minimum value of zero.
+    min_value = np.min(np.min(rhythm_similarity, axis=1))
+    if min_value > 0:
+        rhythm_similarity -= min_value
+    max_value = np.max(np.max(rhythm_similarity, axis=1))
+    if max_value > 0:
+        rhythm_similarity /= max_value
     # Consider only measure periods from one up to `max_multiple`.
-    # TODO Calculate the salience of various measure period hypotheses at each
-    # beat.
-    measure_salience = np.ones((len(tactus), max_multiple))
+    period_salience = np.ones((beats.shape[0] - 1, max_multiple))
+    for i in range(beats.shape[0] - 2):
+        last = i + 1 + max_multiple * 2
+        if last >= beats.shape[0]:
+            last = beats.shape[0] - 1
+        width = last - i - 1
+        period_salience[i][:width / 2] = np.average(
+            np.resize(rhythm_similarity[i][i + 1:last],
+                      (2, width / 2)), axis=0)
+    # Weight the salience by prior.
+    period_salience *= prior
+    if verbose:
+        visualization.show_salience(
+            rhythm_similarity, "Self-similarity matrix")
+        visualization.show_salience(
+            period_salience.swapaxes(0, 1), "Measure salience")
     # Assign target measure periods using dynamic programming. `periods` is a
     # table of the best previous periods at each tactus beat and period
     # candidate.
-    periods = np.zeros((len(tactus), max_multiple), dtype=np.int)
-    scores = np.zeros((len(tactus), max_multiple))
+    periods = np.zeros((beats.shape[0] - 1, max_multiple), dtype=np.int)
+    scores = period_salience
     # Fill in the first row of the dynamic programming table and set the priors
     # at each beat.
-    scores = prior * measure_salience
     scores[0] /= scores[0].max()
     best = np.argmax(scores[0]) + 1
     for i in range(max_multiple):
@@ -83,7 +129,7 @@ def calculate_measures(
     # probability between two measure periods. At each beat, calculate the
     # lowest-cost route to each possible period using the `score` array.
     score = np.zeros(max_multiple)
-    for i in range(1, len(tactus)):
+    for i in range(1, beats.shape[0] - 1):
         score *= 0.
         for j in range(max_multiple):
             # For each measure period hypothesis at the previous beat,
@@ -95,8 +141,8 @@ def calculate_measures(
             periods[i][j] = best + 1
             scores[i][j] *= score[best]
         scores[i] /= scores[i].max()
-    # Assign the best period to each beat in reverse order.
-    period = np.zeros(len(tactus), dtype=np.int)
+    # Assign the best period to each measure in reverse order.
+    period = np.zeros(beats.shape[0] - 1, dtype=np.int)
     best = periods[-1][np.argmax(scores[-1])]
     for i in range(1, scores.shape[0] + 1):
         period[scores.shape[0] - i] = best
@@ -130,7 +176,7 @@ def calculate_measures(
     for i in range(period[0]):
         measure_cost[i] = 0.
     for i in range(period[0], period.shape[0]):
-        target_period = period[i]
+        target_period = period[i] * 2
         # Calculate the optimal previous measure bar, assuming a measure bar is
         # placed at the current index. `furthest_back` is the maximum number of
         # previous indices to check.
@@ -141,8 +187,9 @@ def calculate_measures(
                 math.pow(math.log(float(j) / target_period), 2.))
         best = np.argmin(costs[:furthest_back])
         previous_measure[i] = i - best - 1
-        # TODO Add in a dissimilarity penalty below.
         measure_cost[i] = costs[best]
+        if i - best < period_salience.shape[1]:
+            measure_cost[i] += 1. - period_salience[i][i - best]
     # After calculating the array values from beginning to end, the optimal set
     # of measure bar indices is the set found from backtracking through
     # `previous_measure` starting at the lowest-cost index in the last m
@@ -160,9 +207,15 @@ def calculate_measures(
         i = previous_measure[i]
     # Reverse the list to get the in-order sequence of measure bar indices.
     beat_indices.reverse()
-    # Get the actual indices into samples.
-    result = [tactus[i] for i in beat_indices]
-    return result
+    # Get the actual indices into pulse salience.
+    result = [beats[i] for i in beat_indices]
+    # If the beginning measure is not at the first tactus beat, update the
+    # tactus beat by one half phase.
+    if beat_indices[0] % 2 == 1:
+        if verbose:
+            print("Correcting tactus by a half-phase")
+        tactus = [x for i, x in enumerate(beats) if i % 2 == 1]
+    return (result, tactus)
 
 
 def calculate_pulse_salience(novelty_signal, frame_size, hop_size):
@@ -359,7 +412,7 @@ def calculate_beats(periods, novelty_signal, beat_placement_strictness):
     return (beats, best_cost)
 
 
-def get_meter(
+def calculate_meter(
         samples, hop_size=settings.NOVELTY_HOP_SIZE,
         window_size=settings.NOVELTY_WINDOW_SIZE,
         interpolation_factor=settings.NOVELTY_INTERPOLATION_FACTOR,
@@ -379,6 +432,18 @@ def get_meter(
     `tatums_per_tactus` is an array containing the number of tatums per tactus
     for the period immediately following the tactus beat refered to by the
     index into the array.
+
+    Meter detection is a complex process consisting of several components.
+    First, we detect the tactus period, which may change throughout the piece.
+    Then we find the half-phase information for the tactus level using beat
+    tracking. We use that information to calculate a beat-synchronized period
+    salience signal, which we use to calculate a self-similarity matrix for the
+    piece, which we use to calculate the measure period (in terms of beats per
+    measure), which also may change throughout the piece. We use that
+    information to calculate the measures of the piece, which then tells us
+    which of our two half-phase tactus levels to use. Tatum periods are then
+    estimated at each tactus beat and the results of all three metrical levels
+    are returned.
     """
     if verbose:
         print("Beginning tempo recognition...")
@@ -414,12 +479,6 @@ def get_meter(
         novelty_signal.shape[0])
     tactus, best_tactus_cost = calculate_beats(
         tactus_periods, novelty_signal, beat_placement_strictness)
-    # Calculate the boundaries for segmentation of the piece.
-    boundaries = []
-    for a, b in zip(tactus[:-1], tactus[1:]):
-        boundaries.extend([a, (a + b) / 2])
-    boundaries.append(tactus[-1])
-    boundaries = np.array(boundaries)
     # Calculate the tatums. At a frame whose boundaries are defined by the
     # beats at the tactus level, calculate the pulse salience weighted by prior
     # probability.
@@ -456,16 +515,27 @@ def get_meter(
                 :min(salience.shape[0], np.min(tactus_periods))]
         tatums_per_tactus[i] = int(
             round(float(tactus_periods[first / tempo_hop_size]) / best))
+    # Calculate the prior probability of n tactus beats per measure. The data
+    # is based on Figure 8 from [1], with likelihoods for periods 10-13 made
+    # up.
+    pmeasure = np.array(
+        [0.16, 0.18, 0.14, 0.22, 0.08, 0.16, 0.08, 0.16, 0.14, 0.04, 0.01,
+         0.04, 0.01])
+    measures, tactus = calculate_measures(
+        samples, tactus, pulse_salience, tempo_hop_size, pmeasure, ptransition,
+        measure_placement_strictness, max_beats_per_measure, verbose=verbose)
     tactus = [(i * hop_size + window_size / 2) / interpolation_factor
               for i in tactus]
+    measures = [(i * hop_size + window_size / 2) / interpolation_factor
+                for i in measures]
     # Calculate the beat indices of the tatums.
     tatums = []
-    for i in range(tatums_per_tactus.shape[0]):
+    for i in range(len(tactus)):
         # Calculate the first index of the span from the current tactus beat
         # to the next (or the end of the piece, if there are no future tactus
         # beats.)
         first = tactus[i]
-        if i == tatums_per_tactus.shape[0] - 1:
+        if i == len(tactus) - 1:
             last = samples.shape[0]
         else:
             last = tactus[i + 1]
@@ -474,19 +544,6 @@ def get_meter(
         for j in range(tatums_per_tactus[i]):
             tatums.append(
                 int(first + float(j * width) / tatums_per_tactus[i]))
-    # Calculate the prior probability of n tactus beats per measure. The data
-    # is based on Figure 8 from [1], with likelihoods for periods 10-13 made
-    # up.
-    pmeasure = np.array(
-        [0.16, 0.18, 0.14, 0.22, 0.08, 0.16, 0.08, 0.16, 0.14, 0.04, 0.01,
-         0.04, 0.01])
-    measures = calculate_measures(
-        samples, tactus, pmeasure, ptransition, measure_placement_strictness,
-        max_beats_per_measure, verbose=verbose)
-    # Calculate the high-level structure of the piece.
-    piece_structure = structure.calculate_structure(
-        samples, boundaries, pulse_salience, tempo_hop_size, pmeasure,
-        visualize=visualize)
     if verbose:
         print("Tactus changes: %s" % (str(tactus_changes)))
         print("Finding beats...")

@@ -26,11 +26,11 @@ NOVELTY_INTERPOLATION_FACTOR = 2
 
 # `TEMPO_FRAME_SIZE` is the number of consecutive samples in the novelty signal
 # used to calculate tactus periods.
-TEMPO_FRAME_SIZE = 512
+TEMPO_FRAME_SIZE = 256
 
 # `TEMPO_HOP_SIZE` is the number of novelty samples by which possible tempo
 # changes are spaced.
-TEMPO_HOP_SIZE = 32
+TEMPO_HOP_SIZE = 4
 
 # `MAX_BEATS_PER_MEASURE` is the largest number of tactus beats per measure
 # considered when calulating target measure periods at each tactus beat. We use

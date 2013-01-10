@@ -25,7 +25,7 @@ def render_accompaniment(
     samples = sound.get_samples(input_filename)
     # Prepare the result samples array.
     result = numpy.zeros(samples.shape[0])
-    measures, tactus, tatums, tatums_per_tactus = tempo.get_meter(
+    measures, tactus, tatums, tatums_per_tactus = tempo.calculate_meter(
         samples, verbose=verbose, visualize=visualize)
     if echo_notes:
         note_onsets, _, _ = onsets.get_onsets(samples)
