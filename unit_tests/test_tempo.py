@@ -19,7 +19,8 @@ class TestTempo(unittest.TestCase):
             self.samples = numpy.append(self.samples, samples)
         self.sample_rate = 44100.
 
-    def test_get_meter_returns_correct_number_of_arguments(self):
-        """Tests that `get_meter` returns four lists."""
-        pulses = tempo.get_meter(self.samples, self.sample_rate, verbose=True)
-        assert len(pulses) == 4, "`get_meter` did not return four lists."
+    def test_calculate_meter_returns_correct_number_of_arguments(self):
+        """Tests that `calculate_meter` returns four lists."""
+        pulses = tempo.calculate_meter(
+            self.samples, self.sample_rate, verbose=False)
+        assert len(pulses) == 4, "`calculate_meter` did not return four lists."
