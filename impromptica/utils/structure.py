@@ -50,13 +50,14 @@ def calculate_structure(
         rhythm_similarity /= max_value
     # For measure-finding, calculate a new period salience table.
     period_salience = np.ones(
-        (boundaries.shape[0] - 1, settings.MAX_BEATS_PER_MEASURE * 2))
-    for i in range(boundaries.shape[0] - 1):
+        (boundaries.shape[0] - 1, settings.MAX_BEATS_PER_MEASURE))
+    for i in range(boundaries.shape[0] - 2):
         last = i + 1 + settings.MAX_BEATS_PER_MEASURE * 2
         if last >= boundaries.shape[0]:
             last = boundaries.shape[0] - 1
         width = last - i - 1
-        period_salience[i][:width] = rhythm_similarity[i][i + 1:last]
+        period_salience[i][:width / 2] = np.average(
+            np.resize(rhythm_similarity[i][i + 1:last], (2, width/2)), axis=0)
     period_salience = period_salience.swapaxes(0, 1)
     if visualize:
         # Visualize the self-similarity matrix of the rhythm feature.
