@@ -20,7 +20,8 @@ from impromptica.utils import tempo
 
 def render_accompaniment(
         input_filename, accompaniment_only, echo_notes, echo_key_chords,
-        use_percussion, metronome, soundfont, verbose=False, visualize=False):
+        use_percussion, metronome, play_tatums, soundfont, verbose=False,
+        visualize=False):
     # Get the samples from the file.
     samples = sound.get_samples(input_filename)
     # Prepare the result samples array.
@@ -69,7 +70,7 @@ def render_accompaniment(
     if metronome:
         soundbank = percussion.get_drumkit_samples()
         levels = [measures, tactus, tatums]
-        percussion.render_metronome(result, levels, soundbank)
+        percussion.render_metronome(result, levels, soundbank, play_tatums)
     # Unless requested otherwise, add the original audio to the result track.
     if not accompaniment_only:
         sound.merge_audio(result, samples)
@@ -100,8 +101,12 @@ parser.add_argument(
     'On onsets, play the primary chord of the identified key.'))
 parser.add_argument(
     '--metronome', action='store_true', help=(
-        'Play percussive sounds at the beats of all identified metrical '
-        'levels.'))
+        'Play percussive sounds at the beats of the measure and tactus '
+        'levels'))
+parser.add_argument(
+    '--play-tatums', action='store_true', help=(
+        'If metronome sounds are activated, also play sounds at the tatum '
+        'level.'))
 parser.add_argument(
     '--percussion', help='Generate percussion', action='store_true')
 parser.add_argument(
@@ -117,5 +122,5 @@ parser.add_argument(
 args = parser.parse_args()
 render_accompaniment(
     args.input_file, args.accompaniment_only, args.echo_notes,
-    args.echo_key_chords, args.percussion, args.metronome, args.soundfont,
-    args.verbose, args.visualize)
+    args.echo_key_chords, args.percussion, args.metronome, args.play_tatums,
+    args.soundfont, args.verbose, args.visualize)

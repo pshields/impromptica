@@ -27,16 +27,22 @@ def get_drumkit_samples(drumkit_dir=settings.DRUMKIT_DIR):
     return result
 
 
-def render_metronome(samples, levels, soundbank):
+def render_metronome(samples, levels, soundbank, play_tatums):
     """Renders percussive sounds at the beats of given metrical levels.
 
     `levels` is a list of lists of beat indices, where each top-level list
     represents the beats at a particular metrical level.
+
+    `play_tatums` is a boolean indicating whether or not to play sounds at the
+    tatum level.
     """
     # Select a crash symbol to play on measure beats, a cowbell to play on
     # tactus beats, and a closed hi-hat to play on tatum beats.
-    sounds = (soundbank[15], soundbank[11], soundbank[6])
+    sounds = [soundbank[15], soundbank[11], soundbank[6]]
     result = np.zeros(samples.shape[0])
+    if not play_tatums:
+        sounds.pop()
+        levels = levels[:-1]
     for s, beats in zip(sounds, levels):
         for onset in beats:
             # Crop the sound if necessary.
