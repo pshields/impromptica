@@ -36,6 +36,10 @@ _BEAT_PLACEMENT_STRICTNESS = 10000.
 _MEASURE_PLACEMENT_STRICTNESS = 100000.
 
 
+# Throw exceptions for invalid numpy values
+np.seterr('raise')
+
+
 def calculate_measures(
         samples, tactus, pulse_salience, tempo_hop_size, prior, ptransition,
         measure_placement_strictness, max_multiple, verbose=False):
@@ -105,8 +109,7 @@ def calculate_measures(
             last = beats.shape[0] - 1
         width = last - i - 1
         period_salience[i][:width / 2] = np.average(
-            np.resize(rhythm_similarity[i][i + 1:last],
-                      (2, width / 2)), axis=0)
+            rhythm_similarity[i][i + 1:last], axis=0)
     # Weight the salience by prior.
     period_salience *= prior
     if verbose:

@@ -28,3 +28,6 @@ pip-log.txt
 
 # Soundfonts
 *.sf2
+
+# Compiled binaries
+label_beats

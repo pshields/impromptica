@@ -102,8 +102,11 @@ def build_tempo_change_profile_data(
     result = np.zeros((max_multiple, max_multiple))
     for i in range(max_multiple):
         for j in range(i + 1):
-            result[i][j] = result[j][i] = dist.pdf(
-                math.pow(math.log((j + 1.) / (i + 1.)), 2.))
+            try:
+                result[i][j] = result[j][i] = dist.pdf(
+                    math.pow(math.log((j + 1.) / (i + 1.)), 2.))
+            except FloatingPointError:
+                result[i][j] = 0.
     # Normalize the distribution so that the highest likelihood value is 1.
     highest = np.max(result, axis=1).max()
     for i in range(max_multiple):
