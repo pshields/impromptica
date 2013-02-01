@@ -17,10 +17,10 @@ You may need to run
 
 prior to installing `scikits.audiolab` and `scikits.samplerate` via pip.
 
-Features
---------
+Feature detection
+-----------------
 
-Impromptica currently detects the following features:
+In order to accompany the input audio, Impromptica detects features, such as the notes and tempo of the piece. Here is an overview of the feature detection components.
 
 * Note onset times
 * Note pitch values (as equal-temperament notes)
