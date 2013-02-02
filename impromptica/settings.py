@@ -54,3 +54,7 @@ MAX_NOTE = 121
 # Gaussian distribution used to predict the likelihood of a change in tempo
 # as a function of the squared natural logarithm of the ratio of the tempos.
 TEMPO_CHANGE_STANDARD_DEVIATION = 0.2
+
+# Klapuri's note detection - lowest frequency for sub-band detection
+# In Hz
+LOWEST_SUBBAND_FREQ = 100
