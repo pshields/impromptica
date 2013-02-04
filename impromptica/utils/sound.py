@@ -1,5 +1,4 @@
 """Utilities for working with audio samples."""
-import os
 import math
 import time
 
@@ -70,9 +69,7 @@ def notestring_to_note(note, octave=_MIDDLE_OCTAVE):
     note_val = NOTES.get(note[0])
     note_val += sharps - flats
 
-    note = (octave - _MIDDLE_OCTAVE) * note_val + _MIDDLE_C_SEMITONE
-    if octave == _MIDDLE_OCTAVE:
-        note += note_val
+    note = (octave + 1) * 12 + note_val
 
     return note
 
@@ -107,7 +104,8 @@ def note_to_notestring(semitone):
     Takes a semitone value, returns a string note representation,
     i.e. something like A4b
     """
-    octave = round((semitone - _MIDDLE_C_SEMITONE) / 12.0) + _MIDDLE_OCTAVE
+    octave = math.floor((semitone - _MIDDLE_C_SEMITONE) / 12.0) + \
+        _MIDDLE_OCTAVE
 
     semitone = semitone % 12
 

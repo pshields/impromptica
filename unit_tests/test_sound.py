@@ -44,13 +44,13 @@ class TestSoundGeneration(unittest.TestCase):
 
     def test_frequency_to_notestring(self):
         notestring = sound.frequency_to_notestring(440)
-        assert notestring == "A5"
+        assert notestring == "A4"
 
     def test_notestring_to_note(self):
         assert sound.notestring_to_note("C4") == 60
 
     def test_notestring_to_frequency(self):
-        assert abs(sound.notestring_to_frequency("A5") - 440.0) < 0.5
+        assert abs(sound.notestring_to_frequency("A4") - 440.0) < 0.5
 
     def test_note_to_notestring(self):
         assert sound.note_to_notestring(60) == "C4"
