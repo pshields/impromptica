@@ -40,6 +40,9 @@ def subtract_noise(power_spectrum, bin_width):
     for first, last in zip(band_indices, band_indices[1:]):
         power_spectrum[first:last] -= np.average(power_spectrum[first:last])
 
+    for i in range(power_spectrum.shape[0]):
+        power_spectrum[i] = max(0, power_spectrum[i])
+
 
 def preprocessing(window, samples):
     """
@@ -60,8 +63,8 @@ def preprocessing(window, samples):
     g = (sum(x ** (1 / 3.0) for x in power_spectrum[k0:k1_index])
          / (k1 - k0 + 1)) ** 3
 
-    mag_warp_power_spectrum = math.log(1 + g * power_spectrum)
+    mag_warp_power_spectrum = np.log(1 + g * power_spectrum)
 
-    whitened_spectrum = subtract_noise(mag_warp_power_spectrum)
+    subtract_noise(mag_warp_power_spectrum, freq_bin)
 
-    return whitened_spectrum
+    return mag_warp_power_spectrum
