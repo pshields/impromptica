@@ -5,9 +5,9 @@ import argparse
 
 def analyze_beats(indices):
     """Shows the tempo and change in tempo of given indices.
-    
+
     The first derivative of the indices is the tempo.
-    
+
     The second derivative is the change in tempo.
     """
 

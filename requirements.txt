@@ -1,4 +1,5 @@
 git+git://github.com/johnglover/modal
+rdflib
 scipy
 scikits.audiolab
 scikits.samplerate

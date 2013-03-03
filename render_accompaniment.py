@@ -15,7 +15,7 @@ from impromptica.utils import onsets
 from impromptica.utils import percussion
 from impromptica.utils import note_freq
 from impromptica.utils import sound
-from impromptica.utils import tempo
+from impromptica.utils import vamp
 
 
 def render_accompaniment(
@@ -68,9 +68,8 @@ def render_accompaniment(
                 sound.merge_audio(samples[onset: next_onset], merged_note)
     soundbank = percussion.get_drumkit_samples()
     if metronome:
-        measures, tactus, tatums, tatums_per_tactus = tempo.calculate_meter(
-            samples, verbose=verbose, visualize=visualize)
-        levels = [measures, tactus, tatums]
+        beats = vamp.get_beats(input_filename)
+        levels = [beats, beats, beats]
         percussion.render_metronome(result, levels, soundbank, play_tatums)
     if sounds_at_samples:
         hihat = soundbank[6]

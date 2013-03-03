@@ -1,4 +1,9 @@
 """Impromptica configuration and settings."""
+import os
+
+
+MODULE_ROOT = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.dirname(MODULE_ROOT)
 
 # `SAMPLE_RATE` is the sample rate that all input audio will be coerced to. By
 # default we set it to 48 KHz, which is the recommended practice by the Audio
@@ -58,3 +63,7 @@ TEMPO_CHANGE_STANDARD_DEVIATION = 0.2
 # Klapuri's note detection - lowest frequency for sub-band detection
 # In Hz
 LOWEST_SUBBAND_FREQ = 100
+
+# Sonic Annotator settings
+SONIC_ANNOTATOR_SETTINGS_FILENAME = os.path.join(
+    PROJECT_ROOT, 'sonic_annotator_features.xml')
