@@ -14,17 +14,75 @@ We present music accompaniment software called Impromptica.
 
 \section{Introduction}
 
-\subsection{Background}
+For our capstone project, we are designing and implementing software which uses generative probabilistic models to render an input audio track with musical accompaniment. We call this software Impromptica.
+
+\subsection{Background} 
+Generative music and PCM analysis has a rich background, with most major research starting as early as (1960?). Feature extraction and music analysis are not completely solved problems, and novel algorithms are published frequently exploring different techniques with varying success. Advances in machine learning have yet to be applied to many musical applications. 
+
+While some music generation techniques are solely functional, with no apriori information, many music generation techniques depend on musical feature recognition, which is still an evolving field.
+
+Feature extraction includes obtaining information about the underlying metric structure of music, such as tempo, rhythm, key, and melody-related information, such as note onsets and note frequencies.
+
+Recent research has explored concepts such as k-NN regression to tempo recognition [cite Klapuri k-NN regression paper.] and using spectral smoothness to analyze the frequency of polyphonic music [cite Klapuri Spectral Smoothness].
+
+[Talk about recent research paper by Microsoft Research on music accompaniment.]
+
+
+
+Markov chains. and stuff.
+
+People are still writing papers about music stuff. Algorithms. New stuff. Klapuri.
+
+
 
 \subsection{Motivation}
 
+Despite our limited background in music and music theory, we had an interest in exploring generative music using machines. Music and math are strongly connected. The intersection of computer science and music theory has produced valuable results, but many avenues are still unexplored. Investigating music theory through the lens of mathematics and computing yields opportunities to explore discrete frequencies of sound and how their complex interactions, together with rhythm, produce music. Probabilistic analysis of music offers a simple, elegant way to mathematically interpret music, model the components of a musical piece, and, we believe, generate musical accompaniment.
+
+Compared to other methods of algorithmic music composition, many of which consist of a patchwork of hard-coded rules and heuristics, probabilistic music generation offers a higher-level approach. By learning parameters from a corpus of existing music, probabilistic music generation promises musical insights powered by Bayes' Rule:
+
+{\small
+\[ P(\text{structure}|\text{surface}) = P(\text{surface}|\text{structure})P(\text{structure})P(\text{surface}) \]
+}
+
 \section{Methodology}
+
+The project has feature detection and accompaniment components. Our work so far has focused primarily on feature detection. Onset and note detection is assisted by the modal library. It also includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability [citation]. We have also implemented different algorithms to extract metrical information from music, including tempo recognition. We have not yet implemented methods for recognition of genre and timbre of the input audio. We also have to implement logic to decide which types of accompaniment to produce (e.g. percussive, melodic, harmonic, atmospheric) and when.
 
 \subsection{Feature recognition}
 
+We will utilize probabilistic generative models (see Music and Probability (book; 2007); Music Generation from Statistical Models (paper; 2003); Grammar Based Music Composition (paper; 1996)) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
+
+Another part of the project will be to explore various features’ amenability to probabilistic modelling. Beyond predicting the next note based on the previous note, we will try to apply probabilistic generative models to more complex phenomena such as chords, harmonies, rhythm and other patterns.
+
 For feature recognition, Impromptica uses Vamp plugins. We use Sonic Annotator to extract RDF-formatted feature information.
 
+As time allows, we may compare probabilistic generative models with other methods of algorithmic music composition methods such as cellular automata, genetic algorithms, and constraint-based methods.
+
+Finally, we will render the accompaniment by creating our own virtual instruments or, where appropriate, plugging into existing virtual instruments or synthesizers. We have completed some of this work; Chris wrote utility methods for writing audio to files and using soundfonts for synthesized notes  rather than digitally-generated waves.
+
+\section{Deliverables}
+\subsection{Feature detection algorithms}
+
+The software will contain methods for detection of various features as provided in the project methodology. Third-party libraries may be used for assistance in some of the methods.
+\subsection{Accompaniment generation logic}
+
+When rendering accompaniment onto input audio, the software will select from various forms of accompaniment (as provided in the project methodology) and determine which regions of the piece are most appropriate for accompaniment.
+\subsection{Command-line interface}
+
+Through the command-line interface, a user may specify an input audio file for Impromptica to provide accompaniment for. Taking that file as input, Impromptica renders musical accompaniment and provides the user with the resulting audio file.
+
+\subsection{Web interface}
+The software will provide a web-based interface offering similar functionality. The web interface may also be used for debugging or data visualization, as time allows.
+
+\subsection{Experimentation, data collection and visualization}
+We will analyze the efficacy of probabilistic music generation by comparing the music it creates to that generated by alternative methods.  We will also compare the overall aesthetic of the generated music to that of conventional music.
+
+
 \section{Discussion}
+
+\subsection {Music theory}
+
 
 \subsection{Music ontology}
 
