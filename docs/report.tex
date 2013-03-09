@@ -38,7 +38,11 @@ Compared to other methods of algorithmic music composition, many of which consis
 
 The project has feature detection and accompaniment components. Our work so far has focused primarily on feature detection. Onset and note detection is assisted by the modal library. It also includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability \cite{temperly2007mprob}. We have also implemented different algorithms to extract metrical information from music, including tempo recognition. We have not yet implemented methods for recognition of genre and timbre of the input audio. We also have to implement logic to decide which types of accompaniment to produce (e.g.\ percussive, melodic, harmonic, atmospheric) and when.
 
-\subsection{Feature recognition}
+\subsection{Feature extraction}
+
+Feature extraction plays an important role in Impromptica. The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece.
+
+We implemented note, meter, and key extraction algorithms for Impromptica before discovering Sonic Annotator, a command-line interface to a body of feature extraction tools implemented as Vamp plugins (cite). At present, we are configuring Impromptica to delegate all feature recognition tasks to Sonic Annotator.
 
 We will utilize probabilistic generative models (see Music and Probability (book; 2007); Music Generation from Statistical Models (paper; 2003); Grammar Based Music Composition (paper; 1996)) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
 
@@ -76,6 +80,8 @@ We will analyze the efficacy of probabilistic music generation by comparing the 
 \subsection{Music ontology}
 
 Prior work has examined how feature extraction can be represented through a modular, unifying ontology. \cite{raimond2008web}.
+
+\subsection{Vamp plugins}
 
 \section{Conclusion}
 
