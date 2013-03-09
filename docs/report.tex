@@ -13,27 +13,16 @@ We present music accompaniment software called Impromptica.
 \end{abstract}
 
 \section{Introduction}
-
-For our capstone project, we are designing and implementing software which uses generative probabilistic models to render an input audio track with musical accompaniment. We call this software Impromptica.
+For our capstone project, we are designing and implementing software which utilizes feature extraction, simple sound generation, and generative probabilistic models to render an input audio track with musical accompaniment. We call this software Impromptica.
 
 \subsection{Background} 
-Generative music and PCM analysis has a rich background, with most major research starting as early as (1960?). Feature extraction and music analysis are not completely solved problems, and novel algorithms are published frequently exploring different techniques with varying success. Advances in machine learning have yet to be applied to many musical applications. 
+Generative music and feature extraction have a rich, though young, background. The term generative music, coined by Brian Eno, has come to describe the process of using software programs to create music using a myriad of techniques, such as generative grammars or procedural processes \cite{wooller2005framework}. 
 
-While some music generation techniques are solely functional, with no apriori information, many music generation techniques depend on musical feature recognition, which is still an evolving field.
+While some music generation techniques are solely functional, with no apriori information, many music generation techniques depend on musical feature recognition via feature extraction, which is still an evolving field. Feature extraction includes obtaining information about the underlying metric structure of music, such as tempo, rhythm, key, and melody-related information, such as note onsets and note frequencies. The analyzation of pulse-code modulation, the standard form of digital audio, is used to accomplish this recognition, and novel algorithms are published frequently exploring different techniques with varying success. Some areas have yet to be heavily explored, such as musical analysis via machine learning.
 
-Feature extraction includes obtaining information about the underlying metric structure of music, such as tempo, rhythm, key, and melody-related information, such as note onsets and note frequencies.
+Recent research has explored concepts such as k-NN regression to tempo recognition \cite{eronen2010music} and using spectral smoothness to analyze the frequency of polyphonic music \cite{klapuri2003multiple}.
 
-Recent research has explored concepts such as k-NN regression to tempo recognition [cite Klapuri k-NN regression paper.] and using spectral smoothness to analyze the frequency of polyphonic music [cite Klapuri Spectral Smoothness].
-
-[Talk about recent research paper by Microsoft Research on music accompaniment.]
-
-
-
-Markov chains. and stuff.
-
-People are still writing papers about music stuff. Algorithms. New stuff. Klapuri.
-
-
+%[Talk about recent research paper by Microsoft Research on music accompaniment.]
 
 \subsection{Motivation}
 
@@ -47,7 +36,7 @@ Compared to other methods of algorithmic music composition, many of which consis
 
 \section{Methodology}
 
-The project has feature detection and accompaniment components. Our work so far has focused primarily on feature detection. Onset and note detection is assisted by the modal library. It also includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability [citation]. We have also implemented different algorithms to extract metrical information from music, including tempo recognition. We have not yet implemented methods for recognition of genre and timbre of the input audio. We also have to implement logic to decide which types of accompaniment to produce (e.g. percussive, melodic, harmonic, atmospheric) and when.
+The project has feature detection and accompaniment components. Our work so far has focused primarily on feature detection. Onset and note detection is assisted by the modal library. It also includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability \cite{temperly2007mprob}. We have also implemented different algorithms to extract metrical information from music, including tempo recognition. We have not yet implemented methods for recognition of genre and timbre of the input audio. We also have to implement logic to decide which types of accompaniment to produce (e.g.\ percussive, melodic, harmonic, atmospheric) and when.
 
 \subsection{Feature recognition}
 
