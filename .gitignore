@@ -29,5 +29,12 @@ pip-log.txt
 # Soundfonts
 *.sf2
 
+# Generated LaTeX files
+*.aux
+*.bbl
+*.blg
+*.log
+*.pdf
+
 # Compiled binaries
 label_beats
