@@ -9,12 +9,12 @@
 \maketitle
 
 \begin{abstract}
-We present music accompaniment software called Impromptica, which generates accompaniment using feature recongition and probabilistic models.
+We present music accompaniment software called Impromptica, which generates accompaniment using feature recognition and probabilistic models.
 \end{abstract}
 
 \section{Introduction}
 
-For our capstone project, we are designing and implementing software which utilizes feature extraction, simple sound generation, and generative probabilistic models to render an input audio track with musical accompaniment. We call this software Impromptica.
+For our CS capstone project at the University of Kansas, we are designing and implementing software which utilizes feature extraction, simple sound generation, and generative probabilistic models to render an input audio track with musical accompaniment. We call this software Impromptica. Impromptica uses python, scipy, and Vamp plugins for analysis and feature extraction, and handful of other tools for music generation, including Audiolab, Hydrogen drum kits, and soundfonts. The general goal of Impromptica is to provide a simple way to expand on and explore musical ideas --- like whistled tunes or short piano ostinatos --- via accompaniment.
 
 \subsection{Background}
 
@@ -52,7 +52,7 @@ Impromptica is written in Python and currently has several dependencies, which a
 
 Impromptica uses Sonic Annotator in tandem with Vamp plugins to extract RDF-formatted feature information.
 
-The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece. Onset and note detection is assisted by the modal library. Impromptica also currently includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability \cite{temperly2007mprob}, as well as meter recognition algorithms from \cite{klapuri2006analysis}, beat tracking algorithms from \cite{ellis2007beat}, and pitch detection algorithms from \cite{TODO}.
+The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece. Onset and note detection is assisted by the modal library. Impromptica also currently includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability \cite{temperly2007mprob}, as well as meter recognition algorithms from \cite{klapuri2006analysis}, beat tracking algorithms from \cite{ellis2007beat}, and pitch detection algorithms from \cite{klapuri2003multiple}.
 
 We implemented note, meter, and key extraction algorithms for Impromptica before discovering Sonic Annotator, a command-line interface to a body of feature extraction tools implemented as Vamp plugins (described more fully in \cite{cannam2010sonic}.) We are presently configuring Impromptica to delegate all feature recognition tasks to Sonic Annotator and associated Vamp plugins.
 
