@@ -58,7 +58,7 @@ We implemented note, meter, and key extraction algorithms for Impromptica before
 
 \subsection{Accompaniment generation}
 
-We will utilize probabilistic generative models (see Music and Probability \cite{temperly2007mprob}; Music Generation from Statistical Models \cite{conklin2003music}; Grammar Based Music Composition \cite{mccormack1996grammar}) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
+We will utilize probabilistic generative models (see \cite{temperly2007mprob}, \cite{conklin2003music}, and \cite{mccormack1996grammar}) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
 
 Another part of the project will be to explore various features’ amenability to probabilistic modelling. Beyond predicting the next note based on the previous note, we will try to apply probabilistic generative models to more complex phenomena such as chords, harmonies, rhythm and other patterns.
 
@@ -95,7 +95,7 @@ We will analyze the efficacy of probabilistic music generation by comparing the 
 \section{Discussion}
 
 \subsection {Music theory}
-As a precursor to any implementation, we had to spend some time understanding some fundamental music concepts and how music has been modeled in different systems throughout history. We supplemented this exploration through several books, such as Music and Probability \cite{temperly2007mprob}, Music for Geeks and Nerds \cite{krogerGeeksNerds}, and Musimathics \cite{loy2006musimathics}. This provided several insights into the mathematical nature of music that we were able to map to a computational realm. For instance, the equal-tempered chromatic scale functions on a logarithmic scale - that is, a particular semitones's frequency can be modeled by the equation
+As a precursor to any implementation, we had to spend some time understanding some fundamental music concepts and how music has been modeled in different systems throughout history. We supplemented this exploration through several books, such as \cite{temperly2007mprob}, \cite{krogerGeeksNerds}, and \cite{loy2006musimathics}. This provided several insights into the mathematical nature of music that we were able to map to a computational realm. For instance, the equal-tempered chromatic scale functions on a logarithmic scale - that is, a particular semitones's frequency can be modeled by the equation
 {\small
 	\[frequency = 261.63 * 2^{(\text{value} - 60) / 12.0)}\]
 }
