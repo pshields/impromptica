@@ -24,7 +24,11 @@ While some music generation techniques are solely functional, with no apriori in
 
 Recent research has explored concepts such as k-NN regression to tempo recognition \cite{eronen2010music} and using spectral smoothness to analyze the frequency of polyphonic music \cite{klapuri2003multiple}. Some areas have yet to be heavily explored, such as musical analysis via machine learning.
 
-%[Talk about recent research paper by Microsoft Research on music accompaniment.]
+Work has been done on automatically accompanying vocal tracks with chords \cite{simon2008mysong} using machine learning. \cite{morris2008exposing}
+
+\subsection{Feature extraction}
+
+Feature extraction plays an important role in music generation, and forms the foundation of music accompaniment. Rather than accompany an input audio file directly, musical features are extracted from the file and used to inform decisions made throughout the course of accompaniment generation.
 
 \subsection{Motivation}
 
@@ -44,7 +48,7 @@ The project has feature detection and accompaniment components. Our work so far 
 
 The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece.
 
-We implemented note, meter, and key extraction algorithms for Impromptica before discovering Sonic Annotator, a command-line interface to a body of feature extraction tools implemented as Vamp plugins (cite). At present, we are configuring Impromptica to delegate all feature recognition tasks to Sonic Annotator.
+We implemented note, meter, and key extraction algorithms for Impromptica before discovering Sonic Annotator, a command-line interface to a body of feature extraction tools implemented as Vamp plugins (described more fully in \cite{cannam2010sonic}.) We are presently configuring Impromptica to delegate all feature recognition tasks to Sonic Annotator and associated Vamp plugins.
 
 We will utilize probabilistic generative models (see Music and Probability \cite{temperly2007mprob}; Music Generation from Statistical Models \cite{conklin2003music}; Grammar Based Music Composition \cite{mccormack1996grammar}) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
 
@@ -98,6 +102,12 @@ Prior work has examined how feature extraction can be represented through a modu
 Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redudant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract specified features from input audio files.
 
 \subsection{Vamp plugins}
+
+\subsection{Machine learning for accompaniment}
+
+The MySong project \cite{morris2008exposing}, which used machine learning to select chords for accompaniment of a vocal melody, exposed some model parameters to end users. To keep things simple, Impromptica does not take this approach, choosing instead to make educated guesses of appropriate parameter values given the data it already had.
+
+% TODO for final version of this report: include examples of how Impromptica does this.
 
 \section{Conclusion}
 
