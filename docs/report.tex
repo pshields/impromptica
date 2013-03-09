@@ -26,8 +26,6 @@ Recent research has explored concepts such as k-NN regression to tempo recogniti
 
 Work has been done on automatically accompanying vocal tracks with chords \cite{simon2008mysong} using machine learning. \cite{morris2008exposing}
 
-\subsection{Feature extraction}
-
 Feature extraction plays an important role in music generation, and forms the foundation of music accompaniment. Rather than accompany an input audio file directly, musical features are extracted from the file and used to inform decisions made throughout the course of accompaniment generation.
 
 \subsection{Motivation}
@@ -39,6 +37,8 @@ Compared to other methods of algorithmic music composition, many of which consis
 {\small
   \[ P(\text{structure}|\text{surface}) = \frac{P(\text{surface}|\text{structure})P(\text{structure})}{P(\text{surface})} \]
 }
+
+% TODO Discuss more real-world applications, such as accompaniment of live performances.
 
 \section{Methodology}
 
@@ -97,17 +97,23 @@ Other insights included a exploration of timbre and soundfonts, permutation tech
 
 A large body of work is forming in the area of musical feature extraction. Much of this work is fueled by interests in music information retrieval, where algorithms run on music datasets to identify metadata for applications such as recommender systems. As the number of extracted features has grown, some focus has shifted towards the development of feature extraction frameworks and standards. In such systems, unrelated feature extraction tools may plug in to existing feature extraction systems with little or no additional configuration. The Vamp plugins system takes this approach, defining an API through which programmers may write feature extraction plugins. Tools such as Sonic Annotator provide a mechanism to apply specified Vamp plugins to specified audio files.
 
-Prior work has examined how feature extraction can be represented through a modular, unifying ontology. \cite{raimond2008web}.
+Prior work has examined how feature extraction can be represented through a modular, unifying ontology. \cite{raimond2008web}. Vamp plugins use (non-excusively) the music \cite{raimond2007music} and event \cite{raimond2007event} ontologies to represent extracted features. The SAWA web application \cite{fazekas2009reusable} uses many of the previously-mentioned tools to provide an online API for audio analysis.
+
+% TODO Discuss pros and cons of the RDF approach.
 
 Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redudant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract specified features from input audio files.
-
-\subsection{Vamp plugins}
 
 \subsection{Machine learning for accompaniment}
 
 The MySong project \cite{morris2008exposing}, which used machine learning to select chords for accompaniment of a vocal melody, exposed some model parameters to end users. To keep things simple, Impromptica does not take this approach, choosing instead to make educated guesses of appropriate parameter values given the data it already had.
 
-% TODO for final version of this report: include examples of how Impromptica does this.
+% TODO Include examples of how Impromptica makes educated guesses of appropriate parameter values.
+
+\subsection{Real-time accompaniment challenges}
+
+Impromptica, in its current form, does not attempt to accompany music in real time. Real-time accompaniment is more difficult because future features are not known and must be predicted from past and present extracted features.
+
+% TODO Expand this subsection.
 
 \section{Conclusion}
 
