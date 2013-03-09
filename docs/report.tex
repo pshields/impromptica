@@ -13,9 +13,11 @@ We present music accompaniment software called Impromptica.
 \end{abstract}
 
 \section{Introduction}
+
 For our capstone project, we are designing and implementing software which utilizes feature extraction, simple sound generation, and generative probabilistic models to render an input audio track with musical accompaniment. We call this software Impromptica.
 
-\subsection{Background} 
+\subsection{Background}
+
 Generative music and feature extraction have a rich, though young, background. The term generative music, coined by Brian Eno, has come to describe the process of using software programs to create music using a myriad of techniques, such as generative grammars or procedural processes \cite{wooller2005framework}. 
 
 While some music generation techniques are solely functional, with no apriori information, many music generation techniques depend on musical feature recognition via feature extraction, which is still an evolving field. Feature extraction includes obtaining information about the underlying metric structure of music, such as tempo, rhythm, key, and melody-related information, such as note onsets and note frequencies. The analyzation of pulse-code modulation, the standard form of digital audio, is used to accomplish this recognition, and novel algorithms are published frequently exploring different techniques with varying success. Some areas have yet to be heavily explored, such as musical analysis via machine learning.
@@ -24,6 +26,10 @@ Recent research has explored concepts such as k-NN regression to tempo recogniti
 
 %[Talk about recent research paper by Microsoft Research on music accompaniment.]
 
+\subsection{Feature extraction}
+
+Feature extraction plays an important role in music generation, and forms the foundation of music accompaniment. Rather than accompany an input audio file directly, musical features are extracted from the file and used to inform decisions throughout the process of accompaniment generation.
+
 \subsection{Motivation}
 
 Despite our limited background in music and music theory, we had an interest in exploring generative music using machines. Music and math are strongly connected. The intersection of computer science and music theory has produced valuable results, but many avenues are still unexplored. Investigating music theory through the lens of mathematics and computing yields opportunities to explore discrete frequencies of sound and how their complex interactions, together with rhythm, produce music. Probabilistic analysis of music offers a simple, elegant way to mathematically interpret music, model the components of a musical piece, and, we believe, generate musical accompaniment.
@@ -31,7 +37,7 @@ Despite our limited background in music and music theory, we had an interest in 
 Compared to other methods of algorithmic music composition, many of which consist of a patchwork of hard-coded rules and heuristics, probabilistic music generation offers a higher-level approach. By learning parameters from a corpus of existing music, probabilistic music generation promises musical insights powered by Bayes' Rule:
 
 {\small
-\[ P(\text{structure}|\text{surface}) = P(\text{surface}|\text{structure})P(\text{structure})P(\text{surface}) \]
+  \[ P(\text{structure}|\text{surface}) = \frac{P(\text{surface}|\text{structure})P(\text{structure})}{P(\text{surface})} \]
 }
 
 \section{Methodology}
@@ -40,7 +46,7 @@ The project has feature detection and accompaniment components. Our work so far 
 
 \subsection{Feature extraction}
 
-Feature extraction plays an important role in Impromptica. The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece.
+The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece.
 
 We implemented note, meter, and key extraction algorithms for Impromptica before discovering Sonic Annotator, a command-line interface to a body of feature extraction tools implemented as Vamp plugins (cite). At present, we are configuring Impromptica to delegate all feature recognition tasks to Sonic Annotator.
 
@@ -55,20 +61,25 @@ As time allows, we may compare probabilistic generative models with other method
 Finally, we will render the accompaniment by creating our own virtual instruments or, where appropriate, plugging into existing virtual instruments or synthesizers. We have completed some of this work; Chris wrote utility methods for writing audio to files and using soundfonts for synthesized notes  rather than digitally-generated waves.
 
 \section{Deliverables}
+
 \subsection{Feature detection algorithms}
 
 The software will contain methods for detection of various features as provided in the project methodology. Third-party libraries may be used for assistance in some of the methods.
+
 \subsection{Accompaniment generation logic}
 
 When rendering accompaniment onto input audio, the software will select from various forms of accompaniment (as provided in the project methodology) and determine which regions of the piece are most appropriate for accompaniment.
+
 \subsection{Command-line interface}
 
 Through the command-line interface, a user may specify an input audio file for Impromptica to provide accompaniment for. Taking that file as input, Impromptica renders musical accompaniment and provides the user with the resulting audio file.
 
 \subsection{Web interface}
+
 The software will provide a web-based interface offering similar functionality. The web interface may also be used for debugging or data visualization, as time allows.
 
 \subsection{Experimentation, data collection and visualization}
+
 We will analyze the efficacy of probabilistic music generation by comparing the music it creates to that generated by alternative methods.  We will also compare the overall aesthetic of the generated music to that of conventional music.
 
 \section{Discussion}
@@ -84,11 +95,11 @@ Other insights included a exploration of timbre and soundfonts, permutation tech
 
 \subsection{Music ontology for feature extraction}
 
-A large body of work is forming in the area of musical feature extraction. Much of this work is fueled by interests in music information retrieval, where algorithms can run on large music databases to identify musical metadata for uses such as recommender systems. As more algorithms are developed for specific features, some focus has transitioned to defining standards and interfaces through which unrelated feature extraction algorithms can be interfaced with uniformly. The Vamp plugins system takes this approach, defining an API which programmers may use to develop feature extraction algorithms which are compatible with, and can easily be plugged in to, existing feature extraction systems. Sonic Annotator takes this approach.
+A large body of work is forming in the area of musical feature extraction. Much of this work is fueled by interests in music information retrieval, where algorithms run on music datasets to identify metadata for applications such as recommender systems. As the number of extracted features has grown, some focus has shifted towards the development of feature extraction frameworks and standards. In such systems, unrelated feature extraction tools may plug in to existing feature extraction systems with little or no additional configuration. The Vamp plugins system takes this approach, defining an API through which programmers may write feature extraction plugins. Tools such as Sonic Annotator provide a mechanism to apply specified Vamp plugins to specified audio files.
 
 Prior work has examined how feature extraction can be represented through a modular, unifying ontology. \cite{raimond2008web}.
 
-Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redudant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract speficied features from input audio files.
+Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redudant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract specified features from input audio files.
 
 \subsection{Vamp plugins}
 
