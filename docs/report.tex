@@ -42,23 +42,33 @@ Compared to other methods of algorithmic music composition, many of which consis
 
 \section{Methodology}
 
-The project has feature detection and accompaniment components. Our work so far has focused primarily on feature detection. Onset and note detection is assisted by the modal library. It also includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability \cite{temperly2007mprob}. We have also implemented different algorithms to extract metrical information from music, including tempo recognition. We have not yet implemented methods for recognition of genre and timbre of the input audio. We also have to implement logic to decide which types of accompaniment to produce (e.g.\ percussive, melodic, harmonic, atmospheric) and when.
+The project has feature extraction and accompaniment components. Our work so far has focused primarily on feature extraction.
+
+\subsection{Software environment}
+
+Impromptica is written in Python and currently has several dependencies, which are described in the repository README.
 
 \subsection{Feature extraction}
 
-The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece.
+Impromptica uses Sonic Annotator in tandem with Vamp plugins to extract RDF-formatted feature information.
+
+The input audio file is processed through a variety of feature extraction modules which annotate the original audio track with information about musical features such as tempo and the location and duration of note onsets within the piece. Onset and note detection is assisted by the modal library. Impromptica also currently includes implementation of polyphonic key-finding algorithms based on those found in Music and Probability \cite{temperly2007mprob}, as well as meter recognition algorithms from \cite{klapuri2006analysis}, beat tracking algorithms from \cite{ellis2007beat}, and pitch detection algorithms from \cite{TODO}.
 
 We implemented note, meter, and key extraction algorithms for Impromptica before discovering Sonic Annotator, a command-line interface to a body of feature extraction tools implemented as Vamp plugins (described more fully in \cite{cannam2010sonic}.) We are presently configuring Impromptica to delegate all feature recognition tasks to Sonic Annotator and associated Vamp plugins.
+
+\subsection{Accompaniment generation}
 
 We will utilize probabilistic generative models (see Music and Probability \cite{temperly2007mprob}; Music Generation from Statistical Models \cite{conklin2003music}; Grammar Based Music Composition \cite{mccormack1996grammar}) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
 
 Another part of the project will be to explore various features’ amenability to probabilistic modelling. Beyond predicting the next note based on the previous note, we will try to apply probabilistic generative models to more complex phenomena such as chords, harmonies, rhythm and other patterns.
 
-For feature recognition, Impromptica uses Vamp plugins. We use Sonic Annotator to extract RDF-formatted feature information.
+We also have to implement logic to decide which types of accompaniment to produce (e.g.\ percussive, melodic, harmonic, atmospheric) and when.
 
 As time allows, we may compare probabilistic generative models with other methods of algorithmic music composition methods such as cellular automata, genetic algorithms, and constraint-based methods.
 
-Finally, we will render the accompaniment by creating our own virtual instruments or, where appropriate, plugging into existing virtual instruments or synthesizers. We have completed some of this work; Chris wrote utility methods for writing audio to files and using soundfonts for synthesized notes  rather than digitally-generated waves.
+\subsection{Instrumentation}
+
+Finally, we will render the accompaniment by creating our own virtual instruments or, where appropriate, plugging into existing virtual instruments or synthesizers. We have completed some of this work; Chris wrote utility methods for writing audio to files and using soundfonts for synthesized notes rather than digitally-generated waves.
 
 \section{Deliverables}
 
