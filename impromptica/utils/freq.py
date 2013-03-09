@@ -1,6 +1,6 @@
 """
 Polyphonic note detection based on Klapuri's paper
-[link paper here]
+http://perso.telecom-paristech.fr/~grichard/Enseignements/ATIAM/TP_multiF0/Klapuri_2003.pdf
 """
 
 import numpy as np
