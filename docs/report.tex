@@ -75,7 +75,13 @@ We will analyze the efficacy of probabilistic music generation by comparing the 
 \section{Discussion}
 
 \subsection {Music theory}
+As a precursor to any implementation, we had to spend some time understanding some fundamental music concepts and how music has been modeled in different systems throughout history. We supplemented this exploration through several books, such as Music and Probability \cite{temperly2007mprob}, Music for Geeks and Nerds \cite{krogerGeeksNerds}, and Musimathics \cite{loy2006musimathics}.  This provided several insights into the mathematical nature of music that we were able to map to a computational realm. For instance, the equal-tempered chromatic scale functions on a logarithmic scale - that is, a particular semitones's frequency can be modeled by the equation
+{\small
+	\[frequency = 261.63 * 2^{(\text{value} - 60) / 12.0)}\]
+}
+where 261.63 represents the frequency of middle C, 60 represents the semitone of middle C, and value represents the semitone we are solving for, relative to middle C.
 
+Other insights included a exploration of timbre and soundfonts, permutation techniques like inversion and retrograde, interval sonorities, and several other musical constructs.
 
 \subsection{Music ontology}
 
