@@ -62,6 +62,12 @@ We implemented note, meter, and key extraction algorithms for Impromptica before
 
 We will utilize probabilistic generative models (see \cite{temperly2007mprob}, \cite{conklin2003music}, and \cite{mccormack1996grammar}) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
 
+\subsection{Pattern generation}
+
+We generate patterns for accompaniment (e.g. rhythms, chords, melodies) by generating variations from patterns identified in the input audio file. The precise method by which we do this is still under development.
+
+One possibility would be to store a pattern bank for various forms of accompaniment (e.g. harmony, percussion) and then select a pattern similar to one found in the input audio. For example, we could try to find a pattern in the pattern bank which had the minimum edit distance to a pattern found in the input audio, for some suitable definition of edit distance applied to musical patterns. We find this method unsuitable, as it is incapable of creating new patterns. We are willing to sacrafice some listening aesthetic if necessary in exchange for a system which has the power to compose new patterns.
+
 Another part of the project will be to explore various features’ amenability to probabilistic modelling. Beyond predicting the next note based on the previous note, we will try to apply probabilistic generative models to more complex phenomena such as chords, harmonies, rhythm and other patterns.
 
 We also have to implement logic to decide which types of accompaniment to produce (e.g.\ percussive, melodic, harmonic, atmospheric) and when.
@@ -115,6 +121,20 @@ Prior work has examined how feature extraction can be represented through a modu
 % TODO Discuss pros and cons of the RDF approach.
 
 Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redudant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract specified features from input audio files.
+
+\subsection{Pattern databases}
+
+\subsection{Fitness functions and heuristics}
+
+We lack a purely programmatic mechanism to accurately to assess the aesthetic beauty of a piece of music, whether received or generated.
+
+% TODO Do some research on this. How do others do it?
+
+In \cite{horner1991genetic}, genetic algorithms were used to generate bridges between two note patterns.
+
+\subsection{Relation to music composition}
+
+The field of music composition is more mature than that of accompaniment. Accompaniment (to an unknown score) could be seen as a subset of composition involving mediation between multiple parties.
 
 \subsection{Machine learning for accompaniment}
 
