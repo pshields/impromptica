@@ -40,7 +40,7 @@ Compared to other methods of algorithmic music composition, many of which consis
   \[ P(\text{structure}|\text{surface}) = \frac{P(\text{surface}|\text{structure})P(\text{structure})}{P(\text{surface})} \]
 }
 
-% TODO Discuss more real-world applications, such as accompaniment of live performances.
+Automatic music accompaniment has several applications. It can be used as a creativity aid in the music composition process. It can faciliate multi-instrument performances by solo performers. It can enable rapid prototyping of a new musical piece. It can be used during improvisational performances.
 
 \section{Methodology}
 
@@ -118,7 +118,9 @@ A large body of work is forming in the area of musical feature extraction. Much 
 
 Prior work has examined how feature extraction can be represented through a modular, unifying ontology. \cite{raimond2008web}. Vamp plugins use (non-excusively) the music \cite{raimond2007music} and event \cite{raimond2007event} ontologies to represent extracted features. The SAWA web application \cite{fazekas2009reusable} uses many of the previously-mentioned tools to provide an online API for audio analysis.
 
-% TODO Discuss pros and cons of the RDF approach.
+One downside of the RDF approach is that the data is not as highly compressed as it could be. The data is not stored in a binary format, and there is a good deal of duplication. This also creates costs of parsing the data.
+
+The RDF representation's benefit is that it offers a single interface through which to retrieve various data of different types.
 
 Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redudant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract specified features from input audio files.
 
@@ -127,6 +129,14 @@ Running multiple feature extraction tools on an audio file presents the opportun
 \subsection{Fitness functions and heuristics}
 
 We lack a purely programmatic mechanism to accurately to assess the aesthetic beauty of a piece of music, whether received or generated.
+
+Fitness functions have been used in genetic programming implementations of music composition. \cite{towsey2001towards} lists several features which can be mutated in such a process.
+
+In GenJam \cite{biles1994genjam}, human feedback was used to determine which of two jazz solos created through genetic programming were better, but the narrow bandwidth of such feedback was noted. An unsuccessful attempt was made in  \cite{biles1996neural} to augment the human feedback with a trained neural network. However, the system went on to be used in hundreds of live performances, and was calibrated to the point that it was a successful component of the performances. A thorough treatment is given in \cite{biles2007improvizing}. Impromptica follows much in the spirit of GenJam.
+
+Algorithmic music composition via genetic programming was used to some success in Vox Populi \cite{moroni2000vox}, which gives a fairly thorough treatment of the subject.
+
+Current research continues to explore and refine fitness functions for music. Machine learning lends itself to the configuration of fitness functions. Recent research has explored using hierarchical self-organizing maps to predict musical patterns \cite{law2008towards}. Such models exploit the idea of human expectation as a factor of musical experience. A musical sequence predictor with sufficient power can be used as a component in a fitness function to assess how expected a given musical sequence may be by the listener.
 
 % TODO Do some research on this. How do others do it?
 
