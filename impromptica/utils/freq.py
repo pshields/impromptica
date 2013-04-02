@@ -1,10 +1,15 @@
+"""Polyphonic note detection.
+
+References:
+
+1. Klapuri, Anssi P. "Multiple fundamental frequency estimation based on
+   harmonicity and spectral smoothness." Speech and Audio Processing, IEEE
+   Transactions on 11.6 (2003): 804-816.
 """
-Polyphonic note detection based on Klapuri's paper
-http://perso.telecom-paristech.fr/~grichard/Enseignements/ATIAM/TP_multiF0/Klapuri_2003.pdf
-"""
+import math
 
 import numpy as np
-import math
+
 from impromptica import settings
 from impromptica.utils import novelty
 
