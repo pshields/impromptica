@@ -13,7 +13,7 @@ def get_beats(input_filename):
     # Read in the turtle-formatted results.
     results_filename = input_filename + ".n3"
     subprocess.check_call(['rm', '-f', results_filename])
-    args = ['sonic-annotator', '-t',
+    args = ['sonic-annotator', '-T',
             settings.SONIC_ANNOTATOR_SETTINGS_FILENAME, '-w', 'rdf',
             '--rdf-one-file', results_filename, input_filename]
     subprocess.check_call(args)

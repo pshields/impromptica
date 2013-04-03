@@ -66,4 +66,4 @@ LOWEST_SUBBAND_FREQ = 100
 
 # Sonic Annotator settings
 SONIC_ANNOTATOR_SETTINGS_FILENAME = os.path.join(
-    PROJECT_ROOT, 'sonic_annotator_features.xml')
+    PROJECT_ROOT, 'conf', 'transforms.txt')

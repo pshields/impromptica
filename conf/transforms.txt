@@ -1,0 +1,4 @@
+beats.xml
+onsets.xml
+segmentation.xml
+transcription.xml
