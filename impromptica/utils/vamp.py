@@ -101,5 +101,5 @@ def _get_notes(g, ns):
             settings.SAMPLE_RATE))
         results.append((label, start_time, duration))
 
-    results = sorted(results, key=lambda s: s[0])
+    results = sorted(results, key=lambda s: s[1])
     return results
