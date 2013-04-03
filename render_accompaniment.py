@@ -67,13 +67,23 @@ def render_accompaniment(
                 merged_note = merged_note[:next_onset - onset]
                 sound.merge_audio(samples[onset: next_onset], merged_note)
     soundbank = percussion.get_drumkit_samples()
+    data = vamp.get_input_features(input_filename)
+
+    if verbose:
+        print("Beats:")
+        print(data['beats'])
+        print("Onsets:")
+        print(data['onsets'])
+        print("Segments:")
+        print(data['segments'])
+
     if metronome:
-        beats = vamp.get_beats(input_filename)
-        levels = [beats, beats, beats]
+        levels = [data['beats']] * 3
         percussion.render_metronome(result, levels, soundbank, play_tatums)
     if sounds_at_samples:
         hihat = soundbank[6]
         percussion.render_sounds(samples, sounds_at_samples, hihat)
+
     # Unless requested otherwise, add the original audio to the result track.
     if not accompaniment_only:
         sound.merge_audio(result, samples)
