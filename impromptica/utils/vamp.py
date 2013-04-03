@@ -30,6 +30,7 @@ def get_input_features(input_filename):
     g.parse(results_filename, format='turtle')
 
     data['beats'] = _get_beats(g, NS)
+    data['notes'] = _get_notes(g, NS)
     data['onsets'] = _get_onsets(g, NS)
     data['segments'] = _get_segments(g, NS)
     return data
@@ -68,20 +69,37 @@ def _get_onsets(g, ns):
 def _get_segments(g, ns):
     """Returns the segments from an rdflib graph.
 
-    The segments are returned as indices into the sample audio.
+    The segments are returned as (index, label) pairs.
     """
-    # TODO Return actual segment labels as well
     results = []
-    for segments in g.subjects(rdflib.RDF.type, ns.af['StructuralSegment']):
-        for segment in g.objects(segments, ns.event['time']):
-            for segment_time in g.objects(segment, ns.tl['at']):
-                results.append(float(segment_time[2:len(segment_time) - 1]))
+    for segment in g.subjects(rdflib.RDF.type, ns.af['StructuralSegment']):
+        start = g.objects(segment, ns.event['time']).next()
+        segment_time = g.objects(start, ns.tl['at']).next()
+        segment_time = int(float(segment_time[2:len(segment_time) - 1]) * (
+            settings.SAMPLE_RATE))
+        segment_label = int(g.value(segment, ns.af['feature']).toPython())
+        results.append((segment_time, segment_label))
 
-    results = sorted([int(t * settings.SAMPLE_RATE) for t in results])
+    results = sorted(results, key=lambda s: s[0])
     return results
 
 
 def _get_notes(g, ns):
-    """Returns the notes from an rdflib graph."""
-    # TODO Implement this
-    pass
+    """Returns the notes from an rdflib graph.
+    
+    Notes are (note_midi_value, onset_index, duration_in_samples) triples.
+    """
+    results = []
+    for note in g.subjects(rdflib.RDF.type, ns.af['Note']):
+        time_details = g.objects(note, ns.event['time']).next()
+        start_time = g.objects(time_details, ns.tl['beginsAt']).next()
+        duration = g.objects(time_details, ns.tl['duration']).next()
+        label = int(g.value(note, ns.af['feature']).toPython())
+        start_time = int(float(start_time[2:len(start_time) - 1]) * (
+            settings.SAMPLE_RATE))
+        duration = int(float(duration[2:len(duration) - 1]) * (
+            settings.SAMPLE_RATE))
+        results.append((label, start_time, duration))
+
+    results = sorted(results, key=lambda s: s[0])
+    return results

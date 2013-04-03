@@ -72,6 +72,8 @@ def render_accompaniment(
     if verbose:
         print("Beats:")
         print(data['beats'])
+        print("Notes:")
+        print(data['notes'])
         print("Onsets:")
         print(data['onsets'])
         print("Segments:")
