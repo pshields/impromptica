@@ -6,18 +6,19 @@ import rdflib
 from impromptica import settings
 
 
-def get_input_features(input_filename):
+def get_input_features(input_filename, use_cached_features=False):
     """Returns a dictionary of the input features."""
     data = {}
     # Run Sonic Annotator on the input audio file.
     # Allocate a temporary file to hold the results.
     # Read in the turtle-formatted results.
     results_filename = input_filename + ".n3"
-    subprocess.check_call(['rm', '-f', results_filename])
-    args = ['sonic-annotator', '-T',
-            settings.SONIC_ANNOTATOR_SETTINGS_FILENAME, '-w', 'rdf',
-            '--rdf-one-file', results_filename, input_filename]
-    subprocess.check_call(args)
+    if not use_cached_features:
+        subprocess.check_call(['rm', '-f', results_filename])
+        args = ['sonic-annotator', '-T',
+                settings.SONIC_ANNOTATOR_SETTINGS_FILENAME, '-w', 'rdf',
+                '--rdf-one-file', results_filename, input_filename]
+        subprocess.check_call(args)
 
     # Set up rdflib namespaces.
     class NS:

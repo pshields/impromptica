@@ -220,15 +220,12 @@ def merge_audio(to_samples, merge_samples):
     if diff < 0:
         print "Error: Can't merge clip longer than merge destination"
         return
-
-    for i, samples in enumerate(zip(to_samples, merge_samples)):
-        s1, s2 = samples
-        if s1 < 0 and s2 < 0:
-            to_samples[i] = s1 + s2 - (s1 * s2)
-        elif s1 > 0 and s2 > 0:
-            to_samples[i] = s1 + s2 + (s1 * s2)
-        else:
-            to_samples[i] = s1 + s2
+    
+    # Merge the samples using the technique described at
+    # http://www.vttoth.com/CMS/index.php/technical-notes/68.
+    product = to_samples * merge_samples
+    to_samples += merge_samples
+    to_samples -= (numpy.sign(merge_samples) * product)
 
 
 def generate_chord(duration, amplitude, frequencies,
