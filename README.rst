@@ -14,6 +14,7 @@ On Ubuntu 12.10, install the following dependencies:
 You may need to run
 
     sudo ln -s /usr/lib/i386-linux-gnu/libsndfile.so.1 /usr/local/lib/libsndfile.so
+
     sudo ln -s /usr/lib/i386-linux-gnu/libsamplerate.so.1 /usr/local/lib/libsamplerate.so
 
 prior to installing `scikits.audiolab` and `scikits.samplerate` via pip.
@@ -21,8 +22,11 @@ prior to installing `scikits.audiolab` and `scikits.samplerate` via pip.
 Sonic Annotator is a dependency. Example installation code (for 64-bit Linux operating systems):
 
     wget http://code.soundsoftware.ac.uk/attachments/download/542/sonic-annotator-0.7-linux-amd64.tar.gz
+
     tar xzf sonic-annotator-0.7-linux-amd64.tar.gz
+
     sudo mv sonic-annotator-0.7-linux-amd64/sonic-annotator /usr/local/bin
+
     rm -r sonic-annotator-0.7-linux-amd64*
 
 The Queen Mary set of Vamp plugins are required. See `this page <http://www.vamp-plugins.org/download.html>`_ for installation instructions.
