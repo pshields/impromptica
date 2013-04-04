@@ -6,4 +6,5 @@
     vamp:plugin <http://vamp-plugins.org/rdf/plugins/qm-vamp-plugins#qm-transcription> ;
     vamp:step_size "441"^^xsd:int ; 
     vamp:block_size "441"^^xsd:int ; 
+    vamp:sample_rate "44100"^^xsd:int ;
     .

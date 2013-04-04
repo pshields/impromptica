@@ -62,7 +62,6 @@ def render_accompaniment(
     # Play accompanied notes.
     print('Rendering accompaniment...')
     for tatum_number, midi_notes in enumerate(accompaniment['notes']):
-        print("Tatum %d/%d" % (tatum_number, len(accompaniment['notes'])))
         this_beat_index = data['beats'][tatum_number / 4]
         if tatum_number / 4 + 1 >= len(data['beats']):
             break

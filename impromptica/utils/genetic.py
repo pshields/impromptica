@@ -15,11 +15,10 @@ def evolve(input_features, population_size):
     initial_accompaniment['notes'] = [[] for i in range(len(input_features['beats']) * (
         tatums_per_beat))]
     for midi_note, start_index, duration in input_features['notes']:
-        print(midi_note)
         while beat_number < len(input_features['beats']) and (
             input_features['beats'][beat_number] < start_index):
             beat_number += 1
-        if beat_number >= len(input_features['beats']):
+        if beat_number >= len(input_features['beats']) - 1:
             break
         samples_this_beat = input_features['beats'][beat_number + 1] - (
             input_features['beats'][beat_number])
@@ -31,5 +30,4 @@ def evolve(input_features, population_size):
                 [midi_note, note_tatum_length])
 
     population = [initial_accompaniment]
-    print(population[0])
     return population[0]
