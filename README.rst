@@ -9,7 +9,7 @@ Installation
 
 On Ubuntu 12.10, install the following dependencies:
 
-    sudo apt-get install hydrogen libfftw3-dev libfluidsynth-dev libhdf5-serial-dev libsamplerate0-dev libsndfile1-dev swig
+    sudo apt-get install hydrogen libfftw3-dev libfluidsynth-dev libhdf5-serial-dev libsamplerate0-dev libsndfile1-dev swig python-numpy python-scipy
 
 You may need to run
 
