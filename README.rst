@@ -9,7 +9,7 @@ Installation
 
 On Ubuntu 12.10, install the following dependencies:
 
-    sudo apt-get install hydrogen libfftw3-dev libfluidsynth-dev libhdf5-serial-dev libsamplerate0-dev libsndfile1-dev swig python-numpy python-scipy
+    sudo apt-get install hydrogen libfftw3-dev libfluidsynth-dev libsamplerate0-dev libsndfile1-dev swig python-numpy python-scipy
 
 You may need to run
 
@@ -30,6 +30,8 @@ Sonic Annotator is a dependency. Example installation code (for 64-bit Linux ope
     rm -r sonic-annotator-0.7-linux-amd64*
 
 The Queen Mary set of Vamp plugins are required. See `this page <http://www.vamp-plugins.org/download.html>`_ for installation instructions.
+
+Using a 64-bit operating system is strongly recommended at the present time, because several people have had issues with getting Sonic Annotator working on 32-bit OSs.
 
 Feature detection
 =================
