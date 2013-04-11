@@ -134,8 +134,7 @@ def generate_note(duration, amplitude, frequency,
                   sample_rate=settings.SAMPLE_RATE):
     """
     Returns a numpy array of samples representing the given note being played
-    for the given duration. The note is played as a square wave dampened by a
-    Hamming window.
+    for the given duration.
 
     duration: Time in seconds of clip
     amplitude: Volume of the note, between 0 and 1
@@ -143,7 +142,6 @@ def generate_note(duration, amplitude, frequency,
     sample_rate: Sample rate of the output, in hertz
     """
     result = numpy.zeros(int(duration * sample_rate))
-    dampening = scipy.hamming(result.shape[0])
     period = sample_rate / frequency
 
     for i in range(result.shape[0]):
@@ -151,8 +149,6 @@ def generate_note(duration, amplitude, frequency,
             result[i] = amplitude
         else:
             result[i] = -amplitude
-
-    result *= dampening
 
     return result
 

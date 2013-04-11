@@ -1,5 +1,9 @@
 """Genetic algorithm implementation for music accompaniment."""
+import random
+
 from impromptica import settings
+from impromptica.utils import generation
+from impromptica.utils import notes
 
 
 class Individual(object):
@@ -15,15 +19,47 @@ class Individual(object):
         self.percussion = percussion
 
     @classmethod
-    def random(cls):
+    def rand(cls, num_tatums):
         """Generates a random individual."""
-        # TODO
-        pass
+        obj = cls([], [])
+        obj.notes = [[] for i in range(num_tatums)]
+        n = n0 = notes.Note(0, random.randint(40, 80), 1)
+        obj.notes[0].append(n0)
+        for i in range(1, num_tatums):
+            n = notes.Note(
+                0, generation.generate_note(
+                    n.midi_note, n0.midi_note, (n0.midi_note, 1)), 1)
+            obj.notes[i].append(n)
+        return obj
 
     def mutate(self):
         """Performs a mutation in-place on this individual."""
-        # TODO
-        pass
+        # TODO Implement this in better detail. Use multiple mutations.
+        x = random.random()
+        if x <= 0.01:
+            self.mutate_remove_note()
+
+    def mutate_remove_note(self):
+        """Randomly remove a note from this individual, in-place."""
+        # Calculate the number of notes in this individual.
+        num_notes = 0
+        for note_set in self.notes:
+            for note in note_set:
+                num_notes += 1
+        # If there aren't any notes in this individual, quit early.
+        if num_notes == 0:
+            return
+        # Select one note randomly for removal.
+        n = random.randint(1, num_notes)
+        # Remove it.
+        for note_set in self.notes:
+            for i in range(len(note_set)):
+                n -= 1
+                if n == 0:
+                    note_set.pop(i)
+                    break
+            if n <= 0:
+                break
 
 
 class Population(object):
@@ -38,15 +74,21 @@ class Population(object):
     def __init__(self, n=settings.POPULATION_SIZE):
         self.n = n
 
-    def seed(self, grid):
+    def seed(self, grid, start_randomly=False):
         """Seeds the population for the given segment.
         
         `grid` is a tatum array of notes.
+
+        `start_randomly` is a boolean representing whether the individuals
+        should be created randomly or from the input features.
         """
         self.initial_notes = grid
         self.p = []  # `p` holds the list of individuals
         for i in range(self.n):
-            ind = Individual(grid, [])
+            if start_randomly:
+                ind = Individual.rand(len(grid))
+            else:
+                ind = Individual(grid, [])
             self.p.append(ind)
 
     def evolve(self, rounds=settings.ROUNDS_OF_EVOLUTION):
@@ -80,7 +122,7 @@ def get_genetic_accompaniment(input_notes):
     for i, grid in enumerate(input_notes):
         print("Accompanying segment %d" % (i))
         p = Population()
-        p.seed(grid)
+        p.seed(grid, start_randomly=True)
         p.evolve()
         results.append(p.most_fit())
     return results

@@ -68,7 +68,7 @@ LOWEST_SUBBAND_FREQ = 100
 DEFAULT_TATUMS_PER_BEAT = 4
 
 # Genetic algorithm paramters.
-POPULATION_SIZE = 8192
+POPULATION_SIZE = 512
 ROUNDS_OF_EVOLUTION = 512
 
 # Sonic Annotator settings
