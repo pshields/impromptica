@@ -9,7 +9,9 @@
 \maketitle
 
 \begin{abstract}
-We present music accompaniment software called Impromptica, which generates accompaniment using feature recognition and probabilistic models. The idea of the accompaniment is to provide insights and exploration into existing musical ideas.
+We present music accompaniment software called Impromptica. Unlike traditional accompaniment software, which aligns a known musical score to the real-time performance of a soloist, Impromptica accompanies music for which the score is unknown and may not even exist, such as audio recordings of musical improvisation. Impromptica uses the existing Vamp Plugin architecture to convert an input audio file into a musical representation. It then uses a genetic algorithm to generate accompaniment and render it onto the original audio, producing an accompanied audio file.
+
+Impromptica is written in Python and its source code is publibly available on GitHub.
 \end{abstract}
 
 \section{Introduction}
