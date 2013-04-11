@@ -58,26 +58,46 @@ def render_accompaniment(
         levels = [data['beats']] * 3
         percussion.render_metronome(result, levels, soundbank, False)
 
-    accompaniment = genetic.evolve(data, 5000)
-    # Play accompanied notes.
+    accompaniment = genetic.get_genetic_accompaniment(data['notes'])
+    # Play accompaniment.
     print('Rendering accompaniment...')
-    for tatum_number, midi_notes in enumerate(accompaniment['notes']):
-        this_beat_index = data['beats'][tatum_number / 4]
-        if tatum_number / 4 + 1 >= len(data['beats']):
-            break
-        next_beat_index = data['beats'][tatum_number / 4 + 1]
-        samples_this_beat = next_beat_index - this_beat_index
-        samples_per_tatum = samples_this_beat / 4
-        sample_offset = (tatum_number % 4) * samples_per_tatum
-        for midi_note, tatum_length in midi_notes:
-            note_duration = samples_per_tatum * tatum_length
-            duration_time = note_duration / settings.SAMPLE_RATE
-            frequency = sound.note_to_frequency(midi_note)
-            merged_note = sound.generate_note(duration_time, 0.1, frequency)
-            merged_note = merged_note[:note_duration]
-            sound.merge_audio(
-                samples[this_beat_index + sample_offset:this_beat_index + (
-                    sample_offset + note_duration)], merged_note)
+    for segment_index, seg in enumerate(data['segment_onsets']):
+        start_index, segment_id = seg
+        # Accompany this segment instance.
+        ind = accompaniment[segment_id - 1]  # the individual for this segment
+        start_beat_index = data['beats'].index(start_index)
+        end_beat_index = -1
+        if segment_index < len(data['segment_onsets']) - 1:
+            end_beat_index = data['beats'].index(
+                data['segment_onsets'][segment_index + 1][0])
+        else:
+            end_beat_index = -1
+        # For each tatum in this segment instance, play the associated notes.
+        for tatum_number, ns in enumerate(ind.notes):
+            this_beat_index = int(start_beat_index + tatum_number / (
+                settings.DEFAULT_TATUMS_PER_BEAT))
+            # If this beat index is not in this segment instance, don't do
+            # anything.
+            if this_beat_index < start_beat_index or (
+                this_beat_index > end_beat_index):
+                continue
+            base = data['beats'][this_beat_index]
+            next_beat_index = start_beat_index + tatum_number / (
+                    settings.DEFAULT_TATUMS_PER_BEAT) + 1
+            next_base = data['beats'][next_beat_index]
+            samples_this_beat = next_base - base
+            samples_per_tatum = int(
+                samples_this_beat / settings.DEFAULT_TATUMS_PER_BEAT)
+            sample_offset = (tatum_number % 4) * samples_per_tatum
+            for note in ns:
+                # Calculate the duration of the note in samples.
+                note_duration = samples_per_tatum * note.duration
+                duration_time = note_duration / settings.SAMPLE_RATE
+                frequency = sound.note_to_frequency(note.midi_note)
+                merged_note = sound.generate_note(duration_time, 0.1, frequency)
+                merged_note = merged_note[:note_duration]
+                sound.merge_audio(samples[base + sample_offset:(
+                    base + sample_offset + note_duration)], merged_note)
 
     # Unless requested otherwise, add the original audio to the result track.
     if not accompaniment_only:
