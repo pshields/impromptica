@@ -16,7 +16,7 @@ Impromptica is written in Python licensed under an open-source license (TODO dec
 
 \section{Introduction}
 
-For our computer science capstone project at the University of Kansas, we designed and implemented music accompaniment software which brings together feature extraction algorithms, sound generation facilities, musical representation data structures, generative probabilistic models, and musical fitness functions to render an input audio track with musical accompaniment. We call this software Impromptica. Impromptica is a lightweight system which integrates with the existing Vamp plugin architecture for feature recognition. It uses state-of-the-art algorithms to model and accompany an input audio file.
+For our computer science capstone project at the University of Kansas, we designed and implemented music accompaniment software which brings together feature extraction algorithms, sound generation facilities, musical data structures, generative probabilistic models, and musical fitness functions to render an input audio track with musical accompaniment. We call this software Impromptica. Impromptica is a lightweight system which integrates with the existing Vamp plugin architecture for feature recognition. It uses state-of-the-art algorithms to model and accompany an input audio file.
 
 Impromptica uses python, scipy, and Vamp plugins for analysis and feature extraction, and handful of other tools for music generation, including Audiolab, Hydrogen drum kits, and soundfonts. The general goal of Impromptica is to provide a simple way to expand on and explore musical ideas --- like whistled tunes or short piano ostinatos --- via accompaniment.
 
@@ -46,6 +46,17 @@ Compared to other methods of algorithmic music composition, many of which consis
 
 Automatic music accompaniment has several applications. It can be used as a creativity aid in the music composition process. It can faciliate multi-instrument performances by solo performers. It can enable rapid prototyping of a new musical piece. It can be used during improvisational performances.
 
+\subsection{Key contributions}
+
+In building Impromptica, we made the following contributions:
+
+\begin{enumerate}
+        \item{We implemented polyphonic key-finding algorithms based on those found in Music and Probability \cite{temperly2007mprob}, meter recognition algorithms from \cite{klapuri2006analysis}, beat tracking algorithms from \cite{ellis2007beat}, and pitch detection algorithms from \cite{klapuri2003multiple}.}
+        \item{We integrated existing state-of-the art feature extraction algorithms into Impromptica through the Vamp plugin architecture.}
+        \item{We are writing genetic algorithm code to power Impromptica's accompaniment.}
+        \item{We developed software (Impromptica) which is open-source and may be useful to others.}
+\end{enumerate}
+
 \section{Methodology}
 
 The project has feature extraction and accompaniment components. Our work so far has focused primarily on feature extraction.
@@ -62,7 +73,11 @@ Upon receiving the input audio file, Impromptica creates a subprocess for Sonic 
 
 \subsection{Accompaniment generation}
 
-We will utilize probabilistic generative models (see \cite{temperly2007mprob}, \cite{conklin2003music}, and \cite{mccormack1996grammar}) to generate the notes and rhythm of the accompaniment. We have made some progress on this front. Patrick implemented probabilistic note generation using data from Music and Probability, but we have not integrated it into the output yet. Where probabilistic generation is intractable, we will explore the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
+We use probabilistic generative models to generate the notes and rhythm of the accompaniment. At present, Impromptica can be configured to generate candidate accompaniments randomly, or to start off with the input audio features.
+
+Where probabilistic generation is intractable, we are exploring the use of other algorithmic music composition algorithms as heuristics to decrease the space of possibilities. We will note the extent to which this modifies the probability distribution of generated music.
+
+% TODO Talk more about computational limitations of probabilistic generation, and what we explored to ameliorate them.
 
 \subsection{Pattern generation}
 
