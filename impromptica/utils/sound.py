@@ -265,3 +265,40 @@ def write_wav(samples, filename, audio_format=audiolab.Format(),
     f = audiolab.Sndfile(filename, 'w', audio_format, channels, sample_rate)
     f.write_frames(samples)
     f.close()
+
+def midival_note(midival):
+    """Returns (note, octave) tuple for the midi_note"""
+    notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    d = {}
+    for i in range (12):
+        d[i] = notes[i]
+    s = (midival%12, midival/12)
+    return s
+
+def make_scales ():
+    d = {}
+    for i in range (12):
+        s = str(i)+'m'
+        d[str(i)] = [i, (i+2)%12,  (i+4)%12,  (i+5)%12,  (i+7)%12,  (i+9)%12,  (i+11)%12]
+        d[s] =  [i, (i+2)%12,  (i+3)%12,  (i+5)%12,  (i+7)%12,  (i+8)%12,  (i+10)%12]
+    return d
+
+def get_key (tatum_grid):
+    """Returns a naiive key for a set of notes"""
+    notes = sum (tatum_grid, [])
+    allnotes = map (lambda x: midival_note(x.midi_note)[0], notes)
+    #print allnotes
+    d = make_scales()
+    max = 0
+    scale = '0'
+    for k,v in d.iteritems():
+        num_notes = 0
+        for j in allnotes:
+            if j in v:
+                num_notes = num_notes+1
+        #print k, ':', num_notes
+        if num_notes > max:
+            max = num_notes
+            scale = k
+    return d[scale]
+        
