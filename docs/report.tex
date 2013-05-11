@@ -79,7 +79,7 @@ Upon receiving the input audio file, Impromptica creates a subprocess for Sonic 
 
 We use genetic algorithms in combination with probabilistic generative models to generate the accompaniment. Our use of genetic algorithms stems from its applicability to problems where it is important to find a good, but not necessarily best, solution in a reasonable amount of time. Since our musical models introduce the possibility for error, and our fitness functions serve more as heuristics than as direct truth regarding musical listenability, the value of an optimal accompaniment according to our framework is not likely to exceed that of a suboptimal good accompaniments by a large amount. Genetic algorithms have been used successfully for musical improvisation in the past, which also contributed to our choice.
 
-The probabilistic generative model uses probability distributions from \cite{tempereley2007music} to generate the next note as a function of the previous note. Additionally, mutations of possible accompaniments occur probabilistically.
+The probabilistic generative model uses probability distributions from \cite{temperly2007mprob} to generate the next note as a function of the previous note. Additionally, mutations of possible accompaniments occur probabilistically.
 
 We generate patterns for accompaniment (e.g. note sequences) by generating variations from patterns identified in the input audio file. To do this, we use a genetic algorithm which uses mutation operations to model a population of possible accompaniments in which good accompaniments are more likely to pass on their traits to subsequent generations.
 
@@ -89,7 +89,7 @@ We implemented a modified version of the traditional genetic algorithm; instead 
 
 \subsubsection{Fitness}
 
-After mutation, the fitness of each new individual is evaluated. The fitness function judges the individual on three different criteria - probabilistic consonance, note density per tatum and key uniformity. The probabilistic dissonance uses probability distribution \cite{tempereley2007music} to compare successive notes for consonance. We did not want our accompaniment to be note-heavy to the extent of overpowering the original piece. For this, the fitness of an individual is penalized if there are several accompaniment notes being played within the timeframe of a tatum. We use a naive algorithm to extract the key of the piece and penalize if the accompaniment strays from the key of the original music piece.
+After mutation, the fitness of each new individual is evaluated. The fitness function judges the individual on three different criteria - probabilistic consonance, note density per tatum and key uniformity. The probabilistic dissonance uses probability distribution \cite{temperly2007mprob} to compare successive notes for consonance. We did not want our accompaniment to be note-heavy to the extent of overpowering the original piece. For this, the fitness of an individual is penalized if there are several accompaniment notes being played within the timeframe of a tatum. We use a naive algorithm to extract the key of the piece and penalize if the accompaniment strays from the key of the original music piece.
 
 \subsection{Instrumentation}
 
@@ -173,7 +173,7 @@ Impromptica, in its current form, does not attempt to accompany music in real ti
 
 \section{Conclusion}
 
-
+This paper presents the Impromptica music accompaniment software, the result of a two-semester capstone project. Impromptica uses feature extraction, probabilistic generative models, and genetic algorithms to accompany an input audio file without a known score. Although some of our initial project goals were not achieved, Impromptica represents a significant, working piece of software which may be used freely by anyone wishing to explore automatic music accompaniment.
 
 \bibliographystyle{IEEEtran}
 \bibliography{report}
