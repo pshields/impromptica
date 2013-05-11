@@ -11,7 +11,7 @@
 \begin{abstract}
 We present music accompaniment software called Impromptica. Unlike traditional accompaniment software, which aligns a known musical score to the real-time performance of a soloist, Impromptica accompanies music for which the score is unknown and may not even exist, such as audio recordings of musical improvisation. Impromptica uses the existing Vamp plugin architecture to convert an input audio file into a digital representation of the musical features. It then uses a genetic algorithm to generate accompaniment and render it onto the original audio, producing an accompanied audio file.
 
-Impromptica is written in Python licensed under an open-source license. Its source code is publibly available on GitHub at \emph{https://github.com/chris-hudson/impromptica/}.
+Impromptica is written in Python licensed under an open-source license. Its source code is publicly available on GitHub at \emph{https://github.com/chris-hudson/impromptica/}.
 
  % TODO Decide which license to use.
 
@@ -47,7 +47,7 @@ Compared to other methods of algorithmic music composition, many of which consis
   \[ P(\text{structure}|\text{surface}) = \frac{P(\text{surface}|\text{structure})P(\text{structure})}{P(\text{surface})} \]
 }
 
-Automatic music accompaniment has several applications. It can be used as a creativity aid in the music composition process. It can faciliate multi-instrument performances by solo performers. It can enable rapid prototyping of a new musical piece. It can be used during improvisational performances.
+Automatic music accompaniment has several applications. It can be used as a creativity aid in the music composition process. It can facilitate multi-instrument performances by solo performers. It can enable rapid prototyping of a new musical piece. It can be used during improvisational performances.
 
 \subsection{Key contributions}
 
@@ -79,7 +79,7 @@ Upon receiving the input audio file, Impromptica creates a subprocess for Sonic 
 
 We use genetic algorithms in combination with probabilistic generative models to generate the accompaniment. Our use of genetic algorithms stems from its applicability to problems where it is important to find a good, but not necessarily best, solution in a reasonable amount of time. Since our musical models introduce the possibility for error, and our fitness functions serve more as heuristics than as direct truth regarding musical listenability, the value of an optimal accompaniment according to our framework is not likely to exceed that of a suboptimal good accompaniments by a large amount. Genetic algorithms have been used successfully for musical improvisation in the past, which also contributed to our choice.
 
-The probablistic generative model uses probability distributions from \cite{tempereley2007music} to generate the next note as a function of the previous note. Additionally, mutations of possible accompaniments occur probabilistically.
+The probabilistic generative model uses probability distributions from \cite{tempereley2007music} to generate the next note as a function of the previous note. Additionally, mutations of possible accompaniments occur probabilistically.
 
 We generate patterns for accompaniment (e.g. note sequences) by generating variations from patterns identified in the input audio file. To do this, we use a genetic algorithm which uses mutation operations to model a population of possible accompaniments in which good accompaniments are more likely to pass on their traits to subsequent generations.
 
@@ -89,7 +89,7 @@ We implemented a modified version of the traditional genetic algorithm; instead 
 
 \subsubsection{Fitness}
 
-After mutation, the fitness of each new individual is evaluated. The fitness function judges the individual on three different criteria - probabilistic consonance, note density per tatum and key uniformity. The probabilistic dissonance uses probability distribution \cite{tempereley2007music} to compare successive notes for consonance. We did not want our accompaniment to be note-heavy to the extent of overpowering the original piece. For this, the fitness of an individual is penalized if there are several accompaniment notes being played within the timeframe of a tatum. We use a naiive algorithm to extract the key of the piece and penalize if the accompaniment strays from the key of the original music piece.
+After mutation, the fitness of each new individual is evaluated. The fitness function judges the individual on three different criteria - probabilistic consonance, note density per tatum and key uniformity. The probabilistic dissonance uses probability distribution \cite{tempereley2007music} to compare successive notes for consonance. We did not want our accompaniment to be note-heavy to the extent of overpowering the original piece. For this, the fitness of an individual is penalized if there are several accompaniment notes being played within the timeframe of a tatum. We use a naive algorithm to extract the key of the piece and penalize if the accompaniment strays from the key of the original music piece.
 
 \subsection{Instrumentation}
 
@@ -133,13 +133,13 @@ Other insights included a exploration of timbre and soundfonts, permutation tech
 
 A large body of work is forming in the area of musical feature extraction. Much of this work is fueled by interests in music information retrieval, where algorithms run on music datasets to identify metadata for applications such as recommender systems. As the number of extracted features has grown, some focus has shifted towards the development of feature extraction frameworks and standards. In such systems, unrelated feature extraction tools may plug in to existing feature extraction systems with little or no additional configuration. The Vamp plugins system takes this approach, defining an API through which programmers may write feature extraction plugins. Tools such as Sonic Annotator provide a mechanism to apply specified Vamp plugins to specified audio files.
 
-Prior work has examined how feature extraction can be represented through a modular, unifying ontology. \cite{raimond2008web}. Vamp plugins use (non-excusively) the music \cite{raimond2007music} and event \cite{raimond2007event} ontologies to represent extracted features. The SAWA web application \cite{fazekas2009reusable} uses many of the previously-mentioned tools to provide an online API for audio analysis.
+Prior work has examined how feature extraction can be represented through a modular, unifying ontology. \cite{raimond2008web}. Vamp plugins use (non-exclusively) the music \cite{raimond2007music} and event \cite{raimond2007event} ontologies to represent extracted features. The SAWA web application \cite{fazekas2009reusable} uses many of the previously-mentioned tools to provide an online API for audio analysis.
 
 One downside of the RDF approach is that the data is not as highly compressed as it could be. The data is not stored in a binary format, and there is a good deal of duplication. This also creates costs of parsing the data.
 
 The RDF representation's benefit is that it offers a single interface through which to retrieve various data of different types.
 
-Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redudant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract specified features from input audio files.
+Running multiple feature extraction tools on an audio file presents the opportunity to eliminate redundant transformations of the audio. For example, many feature extraction tools utilize information from the frequency domain, obtained by taking windowed Fast Fourier Transform at steps throughout the piece. Such a derived signal could be calculated once and reused by each feature extraction tool which needs it. YAAFE \cite{mathieu2010yaafe} is an example of a system which attempts to remove redundant steps in the plans it creates to extract specified features from input audio files.
 
 \subsection{Genetic algorithms for music composition}
 
@@ -172,6 +172,8 @@ The MySong project, which used machine learning to select chords for accompanime
 Impromptica, in its current form, does not attempt to accompany music in real time. Real-time accompaniment is more difficult because future features are not known and must be predicted from past and present extracted features.
 
 \section{Conclusion}
+
+
 
 \bibliographystyle{IEEEtran}
 \bibliography{report}
