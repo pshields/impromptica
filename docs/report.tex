@@ -9,9 +9,9 @@
 \maketitle
 
 \begin{abstract}
-We present music accompaniment software called Impromptica. Unlike traditional accompaniment software, which aligns a known musical score to the real-time performance of a soloist, Impromptica accompanies music for which the score is unknown and may not even exist, such as audio recordings of musical improvisation. Impromptica uses the existing Vamp plugin architecture to convert an input audio file into a musical representation. It then uses a genetic algorithm to generate accompaniment and render it onto the original audio, producing an accompanied audio file.
+We present music accompaniment software called Impromptica. Unlike traditional accompaniment software, which aligns a known musical score to the real-time performance of a soloist, Impromptica accompanies music for which the score is unknown and may not even exist, such as audio recordings of musical improvisation. Impromptica uses the existing Vamp plugin architecture to convert an input audio file into a digital representation of the musical features. It then uses a genetic algorithm to generate accompaniment and render it onto the original audio, producing an accompanied audio file.
 
-Impromptica is written in Python licensed under an open-source license. Its source code is publibly available on GitHub.
+Impromptica is written in Python licensed under an open-source license. Its source code is publibly available on GitHub at \emph{https://github.com/chris-hudson/impromptica/}.
 
  % TODO Decide which license to use.
 
@@ -25,13 +25,13 @@ Impromptica uses Python, SciPy, and Vamp plugins for analysis and feature extrac
 
 \subsection{Background}
 
-Generative music and feature extraction have a rich, though young, background. The term generative music, coined by Brian Eno, has come to describe the process of using software programs to create music using a myriad of techniques, such as generative grammars or procedural processes \cite{wooller2005framework}.
+Generative music and feature extraction have a rich, though young, background. Generative music describes the process of using software programs to create music using a myriad of techniques, such as generative grammars or procedural processes \cite{wooller2005framework}.
 
-While some music generation techniques are solely functional, with no apriori information, many music generation techniques depend on musical feature recognition via feature extraction, which is still an evolving field. Feature extraction includes obtaining information about the underlying metric structure of music, such as tempo, rhythm, key, and melody-related information, such as note onsets and note frequencies. The analyzation of pulse-code modulation, the standard form of digital audio, is used to accomplish this recognition, and novel algorithms are published frequently exploring different techniques with varying success. This information informs decisions throughout the accompaniment generation. 
+While some music generation techniques are solely functional, with no apriori information, many music generation techniques depend on musical feature recognition via feature extraction, which is still an evolving field. Feature extraction includes obtaining information about the underlying metric structure of music, such as the tempo and rhythm, and melody-related information, such as note frequencies and the locations of note onsets. The analysis of audio waveforms (in both the time and frequency domains) is used to accomplish this recognition, and novel algorithms are published frequently exploring different techniques with varying success. This information informs decisions throughout the accompaniment generation. 
 
 Music accompaniment often occurs in a context where the score of the musical piece is known. Prior research such as \cite{dannenberg1984line} focused on matching an input audio signal to a known musical score. Our work focuses on accompaniment in an environment where the musical score is not known. Furthermore, we allow for the possibility that the input audio is original piece of music which might not ever have been represented as a musical score.
 
-Recent research has explored concepts such as k-NN regression to tempo recognition \cite{eronen2010music} and using spectral smoothness to analyze the frequency of polyphonic music \cite{klapuri2003multiple}. Some areas have yet to be heavily explored, such as musical analysis via machine learning.
+Recent research has explored concepts such as using k-NN regression for tempo recognition \cite{eronen2010music} and using spectral smoothness to analyze the frequency of polyphonic music \cite{klapuri2003multiple}. Some areas have yet to be heavily explored, such as musical analysis via machine learning.
 
 Work has been done on automatically accompanying vocal tracks with chords \cite{simon2008mysong} using machine learning. \cite{morris2008exposing}
 
@@ -57,13 +57,13 @@ In building Impromptica, we made the following contributions:
         \item{We implemented polyphonic key-finding algorithms based on those found in \cite{temperly2007mprob}, meter recognition algorithms from \cite{klapuri2006analysis}, beat tracking algorithms from \cite{ellis2007beat}, and pitch detection algorithms from \cite{klapuri2003multiple}.}
         \item{We implemented sound manipulation and generation methods which can render musical notes as square waves or have them rendered as soundfounts via the PyFluidSynth package. We also wrote code to load and use Hydrogen drumkits.}
         \item{We integrated existing state-of-the art feature extraction algorithms into Impromptica through the Vamp plugin architecture.}
-        \item{We are writing genetic algorithm code to power Impromptica's accompaniment.}
+        \item{We wrote genetic algorithm code to power Impromptica's accompaniment.}
         \item{We developed software (Impromptica) which is open-source and may be useful to others.}
 \end{enumerate}
 
 \section{Methodology}
 
-The project has feature extraction and accompaniment components. Our work so far has focused primarily on feature extraction.
+The project has feature extraction and accompaniment components.
 
 \subsection{Software environment}
 
@@ -77,35 +77,27 @@ Upon receiving the input audio file, Impromptica creates a subprocess for Sonic 
 
 \subsection{Accompaniment generation}
 
-We use genetic algorithms in combination with probabilistic generative models to generate the notes and rhythm of the accompaniment. Our use of genetic algorithms stems from its applicability to problems where it is important to find a good, but not necessarily best, solution in a reasonable amount of time. Since our musical models introduce the possibility for error, and our fitness functions serve more as heuristics than as direct truth regarding musical listenability, the value of an optimal accompaniment according to our framework is not likely to exceed that of a suboptimal good accompaniments by a large amount. Genetic algorithms have been used successfully for musical improvisation in the past, which also contributed to our choice.
+We use genetic algorithms in combination with probabilistic generative models to generate the accompaniment. Our use of genetic algorithms stems from its applicability to problems where it is important to find a good, but not necessarily best, solution in a reasonable amount of time. Since our musical models introduce the possibility for error, and our fitness functions serve more as heuristics than as direct truth regarding musical listenability, the value of an optimal accompaniment according to our framework is not likely to exceed that of a suboptimal good accompaniments by a large amount. Genetic algorithms have been used successfully for musical improvisation in the past, which also contributed to our choice.
 
-At present, Impromptica can be configured to generate candidate accompaniments randomly, or to start off with the input audio features.
+The probablistic generative model uses probability distributions from \cite{tempereley2007music} to generate the next note as a function of the previous note. Additionally, mutations of possible accompaniments occur probabilistically.
 
-% TODO Give a more thorough treatment of the probabilistic components of genetic algorithms, fitness functions, and our generative models.
+% TODO Give a more thorough treatment of the genetic algorithm mutations and fitness functions.
 
-% TODO Talk more about computational limitations of probabilistic generation, and what we explored to ameliorate them.
-
-We generate patterns for accompaniment (e.g. note sequences) by generating variations from patterns identified in the input audio file. To do this, we use a genetic algorithm which uses recombination and mutation operations to model a population of possible accompaniments in which good accompaniments are more likely to pass on their traits to subsequent generations.
-
-We still need to explore various features’ amenability to probabilistic modelling. Beyond predicting the next note based on the previous note, we will try to apply probabilistic generative models to more complex phenomena such as chords, harmonies, rhythm and other patterns.
-
-We also have to implement logic to decide which types of accompaniment to produce (e.g.\ percussive, melodic, harmonic, atmospheric) and when.
-
-As time allows, we may compare probabilistic generative models with other methods of algorithmic music composition methods such as cellular automata and constraint-based methods.
+We generate patterns for accompaniment (e.g. note sequences) by generating variations from patterns identified in the input audio file. To do this, we use a genetic algorithm which uses mutation operations to model a population of possible accompaniments in which good accompaniments are more likely to pass on their traits to subsequent generations.
 
 \subsection{Instrumentation}
 
-Once an accompaniment has been selected, Impromptica renders it on top of the original audio track. At present, it renders notes using a square wave generator. It is also configured to allow rending of notes using soundfonts.
+Once an accompaniment has been selected, Impromptica renders it on top of the original audio track. At present, it renders notes using a square wave generator. It is also configured to allow rendering of notes using soundfonts.
 
 \section{Deliverables}
 
 \subsection{Feature detection algorithms}
 
-The software will contain methods for detection of various features as provided in the project methodology. Third-party libraries may be used for assistance in some of the methods.
+We implemented polyphonic key-finding algorithms based on those found in \cite{temperly2007mprob}, meter recognition algorithms from \cite{klapuri2006analysis}, beat tracking algorithms from \cite{ellis2007beat}, and pitch detection algorithms from \cite{klapuri2003multiple}.} However, as previously stated, we scrapped this code in favor of using existing Vamp plugins.
 
 \subsection{Accompaniment generation logic}
 
-When rendering accompaniment onto input audio, the software will select from various forms of accompaniment (as provided in the project methodology) and determine which regions of the piece are most appropriate for accompaniment.
+Impromptica uses a genetic algorithm to generate and select its accompaniment. We did not implement logic to determine which regions of the piece are most appropriate for accompaniment, as we had originally planned. We also did not implement multiple-instrument accompaniment. This would have been one of our immediate next tasks, if time had remained.
 
 \subsection{Command-line interface}
 
@@ -113,7 +105,7 @@ Through the command-line interface, a user may specify an input audio file for I
 
 \subsection{Web interface}
 
-The software will provide a web-based interface offering similar functionality. The web interface may also be used for debugging or data visualization, as time allows.
+We did not implement a web interface for Impromptica, which we had originally planned to do.
 
 \subsection{Experimentation, data collection and visualization}
 
